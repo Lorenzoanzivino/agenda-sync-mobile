@@ -1,0 +1,120 @@
+import 'dart:ui';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../core/constants/colors.dart';
+import '../viewmodels/auth_cubit.dart';
+import '../viewmodels/auth_state.dart';
+
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppAtmospheres.privateBg,
+      body: Stack(
+        children: [
+          Positioned(top: -50, right: -50, child: _buildCircle(AppAtmospheres.privateCircles[0], 300)),
+          Positioned(bottom: -100, left: -50, child: _buildCircle(AppAtmospheres.privateCircles[1], 250)),
+
+          Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 30),
+              child: BlocConsumer<AuthCubit, AuthState>(
+                listener: (context, state) {
+                  if (state is AuthError) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(state.message), backgroundColor: Colors.redAccent),
+                    );
+                  }
+                },
+                builder: (context, state) {
+                  return _buildGlassForm(context, state);
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGlassForm(BuildContext context, AuthState state) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(30),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        child: Container(
+          padding: const EdgeInsets.all(30),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(color: Colors.white.withOpacity(0.2)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('AgendaSync', style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 30),
+              _buildTextField(_emailController, 'Email', Icons.email, false),
+              const SizedBox(height: 20),
+              _buildTextField(_passwordController, 'Password', Icons.lock, true),
+              const SizedBox(height: 40),
+
+              SizedBox(
+                width: double.infinity,
+                height: 55,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                  ),
+                  onPressed: state is AuthLoading ? null : () {
+                    context.read<AuthCubit>().login(_emailController.text, _passwordController.text);
+                  },
+                  child: state is AuthLoading
+                      ? const CircularProgressIndicator()
+                      : const Text('ACCEDI', style: TextStyle(color: AppAtmospheres.privateBg, fontWeight: FontWeight.bold, fontSize: 16)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(TextEditingController controller, String hint, IconData icon, bool isPassword) {
+    return TextField(
+      controller: controller,
+      obscureText: isPassword,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+        prefixIcon: Icon(icon, color: Colors.white70),
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.1),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+      ),
+    );
+  }
+
+  Widget _buildCircle(Color color, double size) {
+    return Container(
+      width: size, height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: RadialGradient(colors: [color.withOpacity(0.3), color.withOpacity(0)]),
+      ),
+    );
+  }
+}

@@ -1,0 +1,1 @@
+ /home/its/agenda-sync-mobile/.dart_tool/flutter_build/80e16654859926a4c2026351302fdcb9/dart_build_result.json:  /home/its/agenda-sync-mobile/.dart_tool/package_config.json /home/its/agenda-sync-mobile/pubspec.yaml /home/its/flutter/bin/cache/dart-sdk/version
