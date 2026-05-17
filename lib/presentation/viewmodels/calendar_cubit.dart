@@ -56,7 +56,7 @@ class CalendarCubit extends Cubit<CalendarState> {
           "Calendario creato con successo!",
           codeToShow: newCalendar.inviteCode
       ));
-      fetchSharedCalendars(); // Aggiorna la lista
+      fetchSharedCalendars();
     } catch (e, stacktrace) {
       debugPrint("❌ ERRORE IN createCalendar: $e\n$stacktrace");
       emit(CalendarError(e.toString()));
@@ -69,9 +69,22 @@ class CalendarCubit extends Cubit<CalendarState> {
     try {
       await _calendarService.joinSharedCalendar(inviteCode);
       emit(const CalendarActionSuccess("Ti sei unito al calendario con successo!"));
-      fetchSharedCalendars(); // Aggiorna la lista
+      fetchSharedCalendars();
     } catch (e, stacktrace) {
       debugPrint("❌ ERRORE IN joinCalendar: $e\n$stacktrace");
+      emit(CalendarError(e.toString()));
+      fetchSharedCalendars();
+    }
+  }
+
+  Future<void> deleteCalendar(String calendarId) async {
+    emit(CalendarLoading());
+    try {
+      await _calendarService.deleteSharedCalendar(calendarId);
+      emit(const CalendarActionSuccess("Calendario eliminato con successo."));
+      fetchSharedCalendars();
+    } catch (e, stacktrace) {
+      debugPrint("❌ ERRORE IN deleteCalendar: $e\n$stacktrace");
       emit(CalendarError(e.toString()));
       fetchSharedCalendars();
     }

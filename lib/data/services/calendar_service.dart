@@ -38,4 +38,12 @@ class CalendarService {
       throw Exception('Codice non valido o errore di connessione.');
     }
   }
+
+  Future<void> deleteSharedCalendar(String calendarId) async {
+    debugPrint("📤 Richiesta DELETE a /calendars/shared/$calendarId");
+    final response = await _apiClient.delete('/calendars/shared/$calendarId');
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw Exception('Impossibile eliminare il calendario condiviso.');
+    }
+  }
 }
