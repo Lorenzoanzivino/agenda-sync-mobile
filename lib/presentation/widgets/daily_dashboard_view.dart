@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/models/task_model.dart';
 import '../viewmodels/task_cubit.dart';
-import '../viewmodels/calendar_cubit.dart';
 import 'glass_task_card.dart';
 import 'task_modals.dart';
 import 'calendar_management_modal.dart';
@@ -10,11 +9,13 @@ import 'calendar_management_modal.dart';
 class DailyDashboardView extends StatelessWidget {
   final String title;
   final bool isSharedView;
+  final String? calendarId;
 
   const DailyDashboardView({
     super.key,
     required this.title,
     required this.isSharedView,
+    required this.calendarId,
   });
 
   String _getFormattedDateLabel() {
@@ -37,97 +38,88 @@ class DailyDashboardView extends StatelessWidget {
           Text(title, style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
           const SizedBox(height: 20),
           Expanded(
-            child: BlocBuilder<CalendarCubit, CalendarState>(
-              builder: (context, calState) {
-                // Se siamo nel contesto condiviso e NON ci sono calendari, mostriamo il bottone
-                bool hasSharedCalendars = calState is CalendarLoaded && calState.sharedCalendars.isNotEmpty;
-
-                if (isSharedView && !hasSharedCalendars) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.people_outline, color: Colors.white24, size: 64),
-                        const SizedBox(height: 16),
-                        const Text("Non hai ancora calendari condivisi.", style: TextStyle(color: Colors.white70, fontSize: 16)),
-                        const SizedBox(height: 20),
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white.withValues(alpha: 0.15),
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15), side: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
-                          ),
-                          icon: const Icon(Icons.add_link, color: Colors.white),
-                          label: const Text('Crea o Unisciti', style: TextStyle(color: Colors.white)),
-                          onPressed: () => showCalendarManagementModal(context),
-                        )
-                      ],
+            child: isSharedView && calendarId == null
+                ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.people_outline, color: Colors.white24, size: 64),
+                  const SizedBox(height: 16),
+                  const Text("Non hai ancora calendari condivisi.", style: TextStyle(color: Colors.white70, fontSize: 16)),
+                  const SizedBox(height: 20),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white.withValues(alpha: 0.15),
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15), side: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
                     ),
+                    icon: const Icon(Icons.add_link, color: Colors.white),
+                    label: const Text('Crea o Unisciti', style: TextStyle(color: Colors.white)),
+                    onPressed: () => showCalendarManagementModal(context),
+                  )
+                ],
+              ),
+            )
+                : BlocBuilder<TaskCubit, TaskState>(
+              builder: (context, state) {
+                if (state is TaskLoading || state is TaskInitial) {
+                  return const Center(child: CircularProgressIndicator(color: Colors.white));
+                } else if (state is TaskError) {
+                  return Center(child: Text(state.message, style: const TextStyle(color: Colors.redAccent)));
+                } else if (state is TaskLoaded) {
+
+                  final now = DateTime.now();
+                  final todayStr = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+
+                  final filteredTasks = state.tasks.where((task) {
+                    final taskDate = DateTime.tryParse(task.dataInizio)?.toLocal() ?? now;
+                    final taskDateStr = "${taskDate.year}-${taskDate.month.toString().padLeft(2, '0')}-${taskDate.day.toString().padLeft(2, '0')}";
+
+                    final isSameDay = taskDateStr == todayStr;
+                    final isTaskShared = task.sharedCalendarNome != null;
+                    final matchesType = isSharedView ? isTaskShared : !isTaskShared;
+                    final matchesCalendar = !isSharedView || task.sharedCalendarId == calendarId;
+
+                    return isSameDay && matchesType && matchesCalendar;
+                  }).toList();
+
+                  filteredTasks.sort((a, b) {
+                    if (a.tuttoIlGiorno && !b.tuttoIlGiorno) return -1;
+                    if (!a.tuttoIlGiorno && b.tuttoIlGiorno) return 1;
+                    final dateA = DateTime.tryParse(a.dataInizio) ?? DateTime.now();
+                    final dateB = DateTime.tryParse(b.dataInizio) ?? DateTime.now();
+                    return dateA.compareTo(dateB);
+                  });
+
+                  if (filteredTasks.isEmpty) {
+                    return const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.done_all, color: Colors.white24, size: 64),
+                          SizedBox(height: 16),
+                          Text("Nessun task per oggi.", style: TextStyle(color: Colors.white70, fontSize: 16)),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return ListView.builder(
+                    padding: const EdgeInsets.only(bottom: 120),
+                    itemCount: filteredTasks.length,
+                    itemBuilder: (context, index) {
+                      final task = filteredTasks[index];
+                      return GlassTaskCard(
+                        title: task.titolo,
+                        description: task.descrizione,
+                        isShared: task.sharedCalendarNome != null,
+                        onTap: () => showTaskDetailsModal(context, context.read<TaskCubit>(), task),
+                      );
+                    },
                   );
                 }
-
-                // Se i calendari ci sono (o siamo nel privato), mostriamo i task
-                return BlocBuilder<TaskCubit, TaskState>(
-                  builder: (context, state) {
-                    if (state is TaskLoading || state is TaskInitial) {
-                      return const Center(child: CircularProgressIndicator(color: Colors.white));
-                    } else if (state is TaskError) {
-                      return Center(child: Text(state.message, style: const TextStyle(color: Colors.redAccent)));
-                    } else if (state is TaskLoaded) {
-
-                      final now = DateTime.now();
-                      final todayStr = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
-
-                      final filteredTasks = state.tasks.where((task) {
-                        final taskDate = DateTime.tryParse(task.dataInizio)?.toLocal() ?? now;
-                        final taskDateStr = "${taskDate.year}-${taskDate.month.toString().padLeft(2, '0')}-${taskDate.day.toString().padLeft(2, '0')}";
-
-                        final isSameDay = taskDateStr == todayStr;
-                        final isTaskShared = task.sharedCalendarNome != null;
-                        final matchesType = isSharedView ? isTaskShared : !isTaskShared;
-
-                        return isSameDay && matchesType;
-                      }).toList();
-
-                      filteredTasks.sort((a, b) {
-                        if (a.tuttoIlGiorno && !b.tuttoIlGiorno) return -1;
-                        if (!a.tuttoIlGiorno && b.tuttoIlGiorno) return 1;
-                        final dateA = DateTime.tryParse(a.dataInizio) ?? DateTime.now();
-                        final dateB = DateTime.tryParse(b.dataInizio) ?? DateTime.now();
-                        return dateA.compareTo(dateB);
-                      });
-
-                      if (filteredTasks.isEmpty) {
-                        return const Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.done_all, color: Colors.white24, size: 64),
-                              SizedBox(height: 16),
-                              Text("Nessun task per oggi.", style: TextStyle(color: Colors.white70, fontSize: 16)),
-                            ],
-                          ),
-                        );
-                      }
-
-                      return ListView.builder(
-                        padding: const EdgeInsets.only(bottom: 120),
-                        itemCount: filteredTasks.length,
-                        itemBuilder: (context, index) {
-                          final task = filteredTasks[index];
-                          return GlassTaskCard(
-                            title: task.titolo,
-                            description: task.descrizione,
-                            isShared: task.sharedCalendarNome != null,
-                            onTap: () => showTaskDetailsModal(context, context.read<TaskCubit>(), task),
-                          );
-                        },
-                      );
-                    }
-                    return const SizedBox.shrink();
-                  },
-                );
+                return const SizedBox.shrink();
               },
             ),
           ),

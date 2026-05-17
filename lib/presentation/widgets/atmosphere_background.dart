@@ -21,11 +21,11 @@ class AtmosphereBackground extends StatelessWidget {
           ),
         ),
         // Cerchio Grande In Alto a Destra
-        Positioned(top: -80, right: -80, child: _Circle(color: circleColors[0], size: 350)),
+        Positioned(top: -100, right: -80, child: _Circle(color: circleColors[0], size: 400)),
         // Cerchio Medio In Basso a Sinistra
-        Positioned(bottom: 50, left: -100, child: _Circle(color: circleColors[1], size: 280)),
+        Positioned(bottom: 20, left: -100, child: _Circle(color: circleColors[1], size: 300)),
         // Cerchio Piccolo Centrale (aggiunge profondità)
-        Positioned(top: 250, left: -50, child: _Circle(color: circleColors[2], size: 180)),
+        Positioned(top: 200, left: -30, child: _Circle(color: circleColors[2], size: 200)),
       ],
     );
   }
@@ -43,7 +43,8 @@ class _Circle extends StatelessWidget {
       width: size, height: size,
       decoration: BoxDecoration(
           shape: BoxShape.circle,
-          gradient: RadialGradient(colors: [color.withValues(alpha: 0.45), color.withValues(alpha: 0)])
+          // Aumentata l'opacità per renderli più visibili rispetto allo sfondo
+          gradient: RadialGradient(colors: [color.withValues(alpha: 0.75), color.withValues(alpha: 0)])
       ),
     );
   }

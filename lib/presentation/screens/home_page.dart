@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/constants/colors.dart';
+import '../../domain/models/shared_calendar_model.dart';
 import '../widgets/atmosphere_background.dart';
 import '../widgets/daily_dashboard_view.dart';
 import '../widgets/task_modals.dart';
@@ -23,21 +24,30 @@ class _HomePageState extends State<HomePage> {
   late PageController _pageController;
   late int _dashboardIndex;
   String _preferredNotificationTime = "08:00";
+  bool _hasFetched = false;
+
+  // CACHE: Mantiene i calendari visibili durante i caricamenti per evitare crash del PageView
+  List<SharedCalendarModel> _cachedCalendars = [];
 
   @override
   void initState() {
     super.initState();
     _dashboardIndex = widget.initialIndex;
     _pageController = PageController(initialPage: widget.initialIndex);
+  }
 
-    // Assicuriamoci che i calendari siano caricati all'avvio
-    context.read<TaskCubit>().fetchTasks();
-    context.read<CalendarCubit>().fetchSharedCalendars();
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_hasFetched) {
+      context.read<TaskCubit>().fetchTasks();
+      context.read<CalendarCubit>().fetchSharedCalendars();
+      _hasFetched = true;
+    }
   }
 
   void _onBottomNavTapped(int index) {
     if (index == 1) {
-      // Passa l'indice corrente al Calendario
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => CalendarPage(initialIndex: _dashboardIndex)));
     } else if (index == 2) {
       context.read<AuthCubit>().logout();
@@ -55,7 +65,6 @@ class _HomePageState extends State<HomePage> {
           child: Container(
             padding: const EdgeInsets.all(30),
             decoration: BoxDecoration(
-              // 🔴 MODIFICA QUI: Nero semitrasparente neutro invece di privateBg
               color: Colors.black.withValues(alpha: 0.7),
               border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.2), width: 1.5)),
             ),
@@ -73,7 +82,6 @@ class _HomePageState extends State<HomePage> {
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
                       value: _preferredNotificationTime,
-                      // 🔴 MODIFICA QUI: Sfondo del menu a tendina grigio scuro neutro
                       dropdownColor: const Color(0xFF1E1E1E),
                       style: const TextStyle(color: Colors.white, fontSize: 18),
                       icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
@@ -118,45 +126,123 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    bool isShared = _dashboardIndex == 1;
-
-    return Scaffold(
-      extendBody: true,
-      backgroundColor: Colors.transparent,
-      body: Stack(
-        children: [
-          AtmosphereBackground(
-            backgroundColor: isShared ? AppAtmospheres.sharedBg : AppAtmospheres.privateBg,
-            circleColors: isShared ? AppAtmospheres.sharedCircles : AppAtmospheres.privateCircles,
+  void _confirmDeleteCalendar(String calendarId, String calendarName) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        title: const Text("Elimina Calendario", style: TextStyle(color: Colors.white)),
+        content: Text("Sei sicuro di voler eliminare il calendario '$calendarName'? Questa azione è irreversibile.", style: const TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Annulla", style: TextStyle(color: Colors.white54)),
           ),
-          SafeArea(
-            bottom: false,
-            child: Column(
-              children: [
-                _buildHeaderBar(isShared),
-                _buildAtmosphereIndicators(),
-                Expanded(
-                  child: PageView(
-                    controller: _pageController,
-                    onPageChanged: (index) => setState(() => _dashboardIndex = index),
-                    children: const [
-                      DailyDashboardView(title: "Dashboard Privata", isSharedView: false),
-                      DailyDashboardView(title: "Calendario Condiviso", isSharedView: true),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+
+              int totalShared = _cachedCalendars.length;
+
+              // Se eliminiamo l'ultimo della lista (es: siamo a indice 2 su 2 calendari), scorriamo indietro.
+              // Altrimenti rimaniamo fermi (il widget si aggiornerà mostrando quello successivo o la pagina vuota).
+              if (totalShared > 1 && _dashboardIndex == totalShared) {
+                _pageController.animateToPage(_dashboardIndex - 1, duration: const Duration(milliseconds: 300), curve: Curves.ease);
+              }
+
+              context.read<CalendarCubit>().deleteCalendar(calendarId);
+            },
+            child: const Text("Elimina", style: TextStyle(color: Colors.redAccent)),
           ),
         ],
       ),
-      bottomNavigationBar: _buildCustomBottomNav(),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<CalendarCubit, CalendarState>(
+      builder: (context, state) {
+        if (state is CalendarLoaded) {
+          _cachedCalendars = state.sharedCalendars;
+        }
+
+        int pageCount = _cachedCalendars.isEmpty ? 2 : _cachedCalendars.length + 1;
+        bool isShared = _dashboardIndex > 0;
+
+        Color currentBgColor = AppAtmospheres.privateBg;
+        List<Color> currentCircles = AppAtmospheres.privateCircles;
+
+        if (isShared && _cachedCalendars.isNotEmpty) {
+          int sharedIdx = _dashboardIndex - 1;
+          if (sharedIdx >= _cachedCalendars.length) {
+            sharedIdx = _cachedCalendars.length - 1;
+          }
+          currentBgColor = AppAtmospheres.getSharedBg(sharedIdx);
+          currentCircles = AppAtmospheres.getSharedCircles(sharedIdx);
+        } else if (isShared) {
+          currentBgColor = AppAtmospheres.sharedBg;
+          currentCircles = AppAtmospheres.sharedCircles;
+        }
+
+        return Scaffold(
+          extendBody: true,
+          backgroundColor: Colors.transparent,
+          body: Stack(
+            children: [
+              AtmosphereBackground(
+                backgroundColor: currentBgColor,
+                circleColors: currentCircles,
+              ),
+              SafeArea(
+                bottom: false,
+                child: Column(
+                  children: [
+                    _buildHeaderBar(isShared),
+                    _buildAtmosphereIndicators(pageCount),
+                    Expanded(
+                      child: PageView.builder(
+                        controller: _pageController,
+                        onPageChanged: (index) => setState(() => _dashboardIndex = index),
+                        itemCount: pageCount,
+                        itemBuilder: (context, index) {
+                          if (index == 0) {
+                            return const DailyDashboardView(title: "Dashboard Privata", isSharedView: false, calendarId: null);
+                          } else {
+                            if (_cachedCalendars.isEmpty) {
+                              return const DailyDashboardView(title: "Calendario Condiviso", isSharedView: true, calendarId: null);
+                            } else {
+                              int calendarIndex = index - 1;
+                              if (calendarIndex >= _cachedCalendars.length) {
+                                calendarIndex = _cachedCalendars.length - 1;
+                              }
+                              final calendar = _cachedCalendars[calendarIndex];
+                              return DailyDashboardView(title: calendar.nome, isSharedView: true, calendarId: calendar.id);
+                            }
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          bottomNavigationBar: _buildCustomBottomNav(),
+        );
+      },
     );
   }
 
   Widget _buildHeaderBar(bool isShared) {
+    SharedCalendarModel? currentCalendar;
+    if (isShared && _cachedCalendars.isNotEmpty) {
+      int sharedIdx = _dashboardIndex - 1;
+      if (sharedIdx >= 0 && sharedIdx < _cachedCalendars.length) {
+        currentCalendar = _cachedCalendars[sharedIdx];
+      }
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
       child: Row(
@@ -165,14 +251,22 @@ class _HomePageState extends State<HomePage> {
           const Text("Ciao Lorenzo", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
           Row(
             children: [
+              if (isShared && currentCalendar != null) ...[
+                Container(
+                  decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                  child: IconButton(
+                    icon: const Icon(Icons.delete_outline, color: Colors.black),
+                    onPressed: () => _confirmDeleteCalendar(currentCalendar!.id, currentCalendar.nome),
+                  ),
+                ),
+                const SizedBox(width: 10),
+              ],
               Container(
-                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), shape: BoxShape.circle),
+                decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
                 child: IconButton(
-                  icon: const Icon(Icons.add, color: Colors.white),
+                  icon: const Icon(Icons.add, color: Colors.black),
                   onPressed: () {
-                    // Controlliamo se ci sono calendari prima di aprire il modal nel contesto condiviso
-                    final calState = context.read<CalendarCubit>().state;
-                    if (isShared && (calState is! CalendarLoaded || calState.sharedCalendars.isEmpty)) {
+                    if (isShared && _cachedCalendars.isEmpty) {
                       showCalendarManagementModal(context);
                     } else {
                       showTaskFormModal(context, context.read<TaskCubit>(), isShared: isShared);
@@ -195,12 +289,12 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildAtmosphereIndicators() {
+  Widget _buildAtmosphereIndicators(int pageCount) {
     return Padding(
       padding: const EdgeInsets.only(top: 5, bottom: 10),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: List.generate(2, (index) => GestureDetector(
+        children: List.generate(pageCount, (index) => GestureDetector(
           onTap: () {
             _pageController.animateToPage(
               index,

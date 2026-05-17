@@ -4,10 +4,12 @@ class TaskModel {
   final String descrizione;
   final String dataInizio;
   final String dataFine;
-  final String priorita;
-  final String status;
   final bool tuttoIlGiorno;
+  final String userId;
+  final String? sharedCalendarId; // Aggiunto questo campo
   final String? sharedCalendarNome;
+  final String status;
+  final String priorita;
 
   TaskModel({
     required this.id,
@@ -15,37 +17,27 @@ class TaskModel {
     required this.descrizione,
     required this.dataInizio,
     required this.dataFine,
-    required this.priorita,
-    required this.status,
     required this.tuttoIlGiorno,
+    required this.userId,
+    this.sharedCalendarId, // Aggiunto qui
     this.sharedCalendarNome,
+    required this.status,
+    required this.priorita,
   });
 
   factory TaskModel.fromJson(Map<String, dynamic> json) {
-    dynamic rawNome = json['sharedCalendarNome'] ?? json['sharedCalendarId'];
-    String? calendarNome;
-
-    if (rawNome != null) {
-      String s = rawNome.toString().trim();
-      // Ora diciamo a Flutter che se la stringa è "Privato", equivale a null!
-      if (s.isNotEmpty &&
-          s.toLowerCase() != "null" &&
-          s.toLowerCase() != "undefined" &&
-          s.toLowerCase() != "privato") { // <--- LA MAGIA È QUI
-        calendarNome = s;
-      }
-    }
-
     return TaskModel(
       id: json['id']?.toString() ?? '',
       titolo: json['titolo']?.toString() ?? 'Senza Titolo',
       descrizione: json['descrizione']?.toString() ?? '',
       dataInizio: json['dataInizio']?.toString() ?? DateTime.now().toIso8601String(),
       dataFine: json['dataFine']?.toString() ?? DateTime.now().toIso8601String(),
-      priorita: json['priorita']?.toString() ?? 'LOW',
+      tuttoIlGiorno: json['tuttoIlGiorno'] == true,
+      userId: json['userId']?.toString() ?? '',
+      sharedCalendarId: json['sharedCalendarId']?.toString(), // Mappatura JSON
+      sharedCalendarNome: json['sharedCalendarNome']?.toString(),
       status: json['status']?.toString() ?? 'TODO',
-      tuttoIlGiorno: json['tuttoIlGiorno'] == true || json['tuttoIlGiorno'] == 'true',
-      sharedCalendarNome: calendarNome,
+      priorita: json['priorita']?.toString() ?? 'LOW',
     );
   }
 }
