@@ -1,1 +1,0 @@
- /home/its/agenda-sync-mobile/.dart_tool/flutter_build/80e16654859926a4c2026351302fdcb9/native_assets.json: 
