@@ -8,9 +8,11 @@ import '../widgets/daily_dashboard_view.dart';
 import '../widgets/task_modals.dart';
 import '../widgets/calendar_management_modal.dart';
 import '../viewmodels/auth_cubit.dart';
+import '../viewmodels/auth_state.dart';
 import '../viewmodels/task_cubit.dart';
 import '../viewmodels/calendar_cubit.dart';
 import 'calendar_page.dart';
+import 'login_page.dart'; // Aggiunto per il redirect
 
 class HomePage extends StatefulWidget {
   final int initialIndex;
@@ -50,7 +52,7 @@ class _HomePageState extends State<HomePage> {
     if (index == 1) {
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => CalendarPage(initialIndex: _dashboardIndex)));
     } else if (index == 2) {
-      context.read<AuthCubit>().logout();
+      context.read<AuthCubit>().logout(); // Innescherà il BlocListener
     }
   }
 
@@ -144,8 +146,6 @@ class _HomePageState extends State<HomePage> {
 
               int totalShared = _cachedCalendars.length;
 
-              // Se eliminiamo l'ultimo della lista (es: siamo a indice 2 su 2 calendari), scorriamo indietro.
-              // Altrimenti rimaniamo fermi (il widget si aggiornerà mostrando quello successivo o la pagina vuota).
               if (totalShared > 1 && _dashboardIndex == totalShared) {
                 _pageController.animateToPage(_dashboardIndex - 1, duration: const Duration(milliseconds: 300), curve: Curves.ease);
               }
@@ -161,76 +161,88 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<CalendarCubit, CalendarState>(
-      builder: (context, state) {
-        if (state is CalendarLoaded) {
-          _cachedCalendars = state.sharedCalendars;
+    // 1. Aggiunto BlocListener per ascoltare il logout
+    return BlocListener<AuthCubit, AuthState>(
+      listener: (context, state) {
+        if (state is AuthUnauthenticated) {
+          // Reindirizza alla pagina di Login rimuovendo tutto lo storico
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const LoginPage()),
+                (route) => false,
+          );
         }
-
-        int pageCount = _cachedCalendars.isEmpty ? 2 : _cachedCalendars.length + 1;
-        bool isShared = _dashboardIndex > 0;
-
-        Color currentBgColor = AppAtmospheres.privateBg;
-        List<Color> currentCircles = AppAtmospheres.privateCircles;
-
-        if (isShared && _cachedCalendars.isNotEmpty) {
-          int sharedIdx = _dashboardIndex - 1;
-          if (sharedIdx >= _cachedCalendars.length) {
-            sharedIdx = _cachedCalendars.length - 1;
-          }
-          currentBgColor = AppAtmospheres.getSharedBg(sharedIdx);
-          currentCircles = AppAtmospheres.getSharedCircles(sharedIdx);
-        } else if (isShared) {
-          currentBgColor = AppAtmospheres.sharedBg;
-          currentCircles = AppAtmospheres.sharedCircles;
-        }
-
-        return Scaffold(
-          extendBody: true,
-          backgroundColor: Colors.transparent,
-          body: Stack(
-            children: [
-              AtmosphereBackground(
-                backgroundColor: currentBgColor,
-                circleColors: currentCircles,
-              ),
-              SafeArea(
-                bottom: false,
-                child: Column(
-                  children: [
-                    _buildHeaderBar(isShared),
-                    _buildAtmosphereIndicators(pageCount),
-                    Expanded(
-                      child: PageView.builder(
-                        controller: _pageController,
-                        onPageChanged: (index) => setState(() => _dashboardIndex = index),
-                        itemCount: pageCount,
-                        itemBuilder: (context, index) {
-                          if (index == 0) {
-                            return const DailyDashboardView(title: "Dashboard Privata", isSharedView: false, calendarId: null);
-                          } else {
-                            if (_cachedCalendars.isEmpty) {
-                              return const DailyDashboardView(title: "Calendario Condiviso", isSharedView: true, calendarId: null);
-                            } else {
-                              int calendarIndex = index - 1;
-                              if (calendarIndex >= _cachedCalendars.length) {
-                                calendarIndex = _cachedCalendars.length - 1;
-                              }
-                              final calendar = _cachedCalendars[calendarIndex];
-                              return DailyDashboardView(title: calendar.nome, isSharedView: true, calendarId: calendar.id);
-                            }
-                          }
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          bottomNavigationBar: _buildCustomBottomNav(),
-        );
       },
+      child: BlocBuilder<CalendarCubit, CalendarState>(
+        builder: (context, state) {
+          if (state is CalendarLoaded) {
+            _cachedCalendars = state.sharedCalendars;
+          }
+
+          int pageCount = _cachedCalendars.isEmpty ? 2 : _cachedCalendars.length + 1;
+          bool isShared = _dashboardIndex > 0;
+
+          Color currentBgColor = AppAtmospheres.privateBg;
+          List<Color> currentCircles = AppAtmospheres.privateCircles;
+
+          if (isShared && _cachedCalendars.isNotEmpty) {
+            int sharedIdx = _dashboardIndex - 1;
+            if (sharedIdx >= _cachedCalendars.length) {
+              sharedIdx = _cachedCalendars.length - 1;
+            }
+            currentBgColor = AppAtmospheres.getSharedBg(sharedIdx);
+            currentCircles = AppAtmospheres.getSharedCircles(sharedIdx);
+          } else if (isShared) {
+            currentBgColor = AppAtmospheres.sharedBg;
+            currentCircles = AppAtmospheres.sharedCircles;
+          }
+
+          return Scaffold(
+            extendBody: true,
+            backgroundColor: Colors.transparent,
+            body: Stack(
+              children: [
+                AtmosphereBackground(
+                  backgroundColor: currentBgColor,
+                  circleColors: currentCircles,
+                ),
+                SafeArea(
+                  bottom: false,
+                  child: Column(
+                    children: [
+                      _buildHeaderBar(isShared),
+                      _buildAtmosphereIndicators(pageCount),
+                      Expanded(
+                        child: PageView.builder(
+                          controller: _pageController,
+                          onPageChanged: (index) => setState(() => _dashboardIndex = index),
+                          itemCount: pageCount,
+                          itemBuilder: (context, index) {
+                            if (index == 0) {
+                              return const DailyDashboardView(title: "Dashboard Privata", isSharedView: false, calendarId: null);
+                            } else {
+                              if (_cachedCalendars.isEmpty) {
+                                return const DailyDashboardView(title: "Calendario Condiviso", isSharedView: true, calendarId: null);
+                              } else {
+                                int calendarIndex = index - 1;
+                                if (calendarIndex >= _cachedCalendars.length) {
+                                  calendarIndex = _cachedCalendars.length - 1;
+                                }
+                                final calendar = _cachedCalendars[calendarIndex];
+                                return DailyDashboardView(title: calendar.nome, isSharedView: true, calendarId: calendar.id);
+                              }
+                            }
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            bottomNavigationBar: _buildCustomBottomNav(),
+          );
+        },
+      ),
     );
   }
 
@@ -320,19 +332,24 @@ class _HomePageState extends State<HomePage> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
-          height: 90,
-          padding: const EdgeInsets.only(bottom: 10),
+          // Rimosso height fisso a 90 per permettere alla SafeArea di espandersi
           decoration: BoxDecoration(
               color: Colors.black.withValues(alpha: 0.4),
               border: const Border(top: BorderSide(color: Colors.white10, width: 0.5))
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildNavItem(Icons.dashboard_rounded, 'Home', 0),
-              _buildNavItem(Icons.calendar_month_rounded, 'Calendario', 1),
-              _buildNavItem(Icons.logout_rounded, 'Logout', 2),
-            ],
+          // 2. Aggiunta SafeArea per proteggere i bottoni
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 10, top: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildNavItem(Icons.dashboard_rounded, 'Home', 0),
+                  _buildNavItem(Icons.calendar_month_rounded, 'Calendario', 1),
+                  _buildNavItem(Icons.logout_rounded, 'Logout', 2),
+                ],
+              ),
+            ),
           ),
         ),
       ),

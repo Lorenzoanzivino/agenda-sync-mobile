@@ -46,11 +46,17 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> signup(String nome, String email, String password, String dataNascita) async {
     emit(AuthLoading());
     try {
-      final user = await _authService.signup(nome, email, password, dataNascita);
+      // 1. Esegue la registrazione sul backend
+      await _authService.signup(nome, email, password, dataNascita);
 
+      // 2. Esegue immediatamente il login automatico per ottenere il token JWT
+      final userWithToken = await _authService.login(email, password);
+
+      // 3. Inizializza notifiche
       await _setupNotifications();
 
-      emit(AuthAuthenticated(user));
+      // 4. Cambia stato con l'utente provvisto di token
+      emit(AuthAuthenticated(userWithToken));
     } catch (e) {
       emit(AuthError(e.toString().replaceAll('Exception: ', '')));
     }
