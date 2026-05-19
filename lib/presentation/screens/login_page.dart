@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import '../../core/constants/colors.dart';
 import '../viewmodels/auth_cubit.dart';
 import '../viewmodels/auth_state.dart';
@@ -15,6 +16,58 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _nomeController = TextEditingController();
+  final _dataNascitaController = TextEditingController();
+
+  bool _isLogin = true;
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime(2000),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.dark().copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: Colors.white,
+              onPrimary: AppAtmospheres.privateBg,
+              surface: AppAtmospheres.privateBg,
+              onSurface: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() {
+        _dataNascitaController.text = DateFormat('yyyy-MM-dd').format(picked);
+      });
+    }
+  }
+
+  void _submitForm(BuildContext context) {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (_isLogin) {
+      context.read<AuthCubit>().login(email, password);
+    } else {
+      final nome = _nomeController.text.trim();
+      final dataNascita = _dataNascitaController.text;
+
+      if (nome.isEmpty || dataNascita.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Compila tutti i campi'), backgroundColor: Colors.redAccent),
+        );
+        return;
+      }
+
+      context.read<AuthCubit>().signup(nome, email, password, dataNascita);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,12 +115,26 @@ class _LoginPageState extends State<LoginPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('AgendaSync', style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
+              Text(_isLogin ? 'AgendaSync' : 'Registrati', style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
               const SizedBox(height: 30),
+
+              if (!_isLogin) ...[
+                _buildTextField(_nomeController, 'Nome', Icons.person, false),
+                const SizedBox(height: 20),
+              ],
+
               _buildTextField(_emailController, 'Email', Icons.email, false),
               const SizedBox(height: 20),
+
               _buildTextField(_passwordController, 'Password', Icons.lock, true),
-              const SizedBox(height: 40),
+              const SizedBox(height: 20),
+
+              if (!_isLogin) ...[
+                _buildDateField(context),
+                const SizedBox(height: 20),
+              ],
+
+              const SizedBox(height: 20),
 
               SizedBox(
                 width: double.infinity,
@@ -77,14 +144,24 @@ class _LoginPageState extends State<LoginPage> {
                     backgroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                   ),
-                  onPressed: state is AuthLoading ? null : () {
-                    context.read<AuthCubit>().login(_emailController.text, _passwordController.text);
-                  },
+                  onPressed: state is AuthLoading ? null : () => _submitForm(context),
                   child: state is AuthLoading
                       ? const CircularProgressIndicator()
-                      : const Text('ACCEDI', style: TextStyle(color: AppAtmospheres.privateBg, fontWeight: FontWeight.bold, fontSize: 16)),
+                      : Text(_isLogin ? 'ACCEDI' : 'REGISTRATI', style: const TextStyle(color: AppAtmospheres.privateBg, fontWeight: FontWeight.bold, fontSize: 16)),
                 ),
               ),
+              const SizedBox(height: 20),
+              TextButton(
+                onPressed: () {
+                  setState(() {
+                    _isLogin = !_isLogin;
+                  });
+                },
+                child: Text(
+                  _isLogin ? 'Non hai un account? Registrati' : 'Hai già un account? Accedi',
+                  style: const TextStyle(color: Colors.white70),
+                ),
+              )
             ],
           ),
         ),
@@ -101,6 +178,23 @@ class _LoginPageState extends State<LoginPage> {
         hintText: hint,
         hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
         prefixIcon: Icon(icon, color: Colors.white70),
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.1),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+      ),
+    );
+  }
+
+  Widget _buildDateField(BuildContext context) {
+    return TextField(
+      controller: _dataNascitaController,
+      readOnly: true,
+      onTap: () => _selectDate(context),
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        hintText: 'Data di Nascita (YYYY-MM-DD)',
+        hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+        prefixIcon: const Icon(Icons.calendar_today, color: Colors.white70),
         filled: true,
         fillColor: Colors.white.withOpacity(0.1),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
