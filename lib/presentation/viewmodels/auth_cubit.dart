@@ -43,6 +43,19 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
+  Future<void> signup(String nome, String email, String password, String dataNascita) async {
+    emit(AuthLoading());
+    try {
+      final user = await _authService.signup(nome, email, password, dataNascita);
+
+      await _setupNotifications();
+
+      emit(AuthAuthenticated(user));
+    } catch (e) {
+      emit(AuthError(e.toString().replaceAll('Exception: ', '')));
+    }
+  }
+
   Future<void> _setupNotifications() async {
     await _notificationService.initNotifications();
     String? fcmToken = await _notificationService.getDeviceToken();
