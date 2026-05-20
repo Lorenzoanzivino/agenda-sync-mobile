@@ -448,19 +448,22 @@ class _CalendarPageState extends State<CalendarPage> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
-          height: 90,
-          padding: const EdgeInsets.only(bottom: 10),
           decoration: BoxDecoration(
               color: Colors.black.withValues(alpha: 0.4),
               border: const Border(top: BorderSide(color: Colors.white10, width: 0.5))
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildNavItem(Icons.dashboard_rounded, 'Home', 0),
-              _buildNavItem(Icons.calendar_month_rounded, 'Calendario', 1),
-              _buildNavItem(Icons.logout_rounded, 'Logout', 2),
-            ],
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 10, top: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildNavItem(Icons.dashboard_rounded, 'Home', 0),
+                  _buildNavItem(Icons.calendar_month_rounded, 'Calendario', 1),
+                  _buildNavItem(Icons.logout_rounded, 'Logout', 2),
+                ],
+              ),
+            ),
           ),
         ),
       ),
