@@ -39,3 +39,8 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Flutter/IDE ignores
+build/
+.dart_tool/
+.idea/

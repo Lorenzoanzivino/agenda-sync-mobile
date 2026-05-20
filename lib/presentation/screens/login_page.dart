@@ -2,9 +2,11 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../core/constants/colors.dart';
 import '../viewmodels/auth_cubit.dart';
 import '../viewmodels/auth_state.dart';
+import 'home_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -19,7 +21,27 @@ class _LoginPageState extends State<LoginPage> {
   final _nomeController = TextEditingController();
   final _dataNascitaController = TextEditingController();
 
+  final _storage = const FlutterSecureStorage();
+
   bool _isLogin = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedCredentials();
+  }
+
+  Future<void> _loadSavedCredentials() async {
+    final savedEmail = await _storage.read(key: 'saved_email');
+    final savedPassword = await _storage.read(key: 'saved_password');
+
+    if (savedEmail != null && savedPassword != null) {
+      setState(() {
+        _emailController.text = savedEmail;
+        _passwordController.text = savedPassword;
+      });
+    }
+  }
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -82,10 +104,18 @@ class _LoginPageState extends State<LoginPage> {
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 30),
               child: BlocConsumer<AuthCubit, AuthState>(
-                listener: (context, state) {
+                listener: (context, state) async {
                   if (state is AuthError) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(state.message), backgroundColor: Colors.redAccent),
+                    );
+                  } else if (state is AuthAuthenticated) {
+                    await _storage.write(key: 'saved_email', value: _emailController.text.trim());
+                    await _storage.write(key: 'saved_password', value: _passwordController.text);
+
+                    if (!context.mounted) return;
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (_) => const HomePage()),
                     );
                   }
                 },
@@ -108,9 +138,9 @@ class _LoginPageState extends State<LoginPage> {
         child: Container(
           padding: const EdgeInsets.all(30),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
+            color: Colors.white.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(30),
-            border: Border.all(color: Colors.white.withOpacity(0.2)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -176,10 +206,10 @@ class _LoginPageState extends State<LoginPage> {
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
         prefixIcon: Icon(icon, color: Colors.white70),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.1),
+        fillColor: Colors.white.withValues(alpha: 0.1),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
       ),
     );
@@ -193,10 +223,10 @@ class _LoginPageState extends State<LoginPage> {
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         hintText: 'Data di Nascita (YYYY-MM-DD)',
-        hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
         prefixIcon: const Icon(Icons.calendar_today, color: Colors.white70),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.1),
+        fillColor: Colors.white.withValues(alpha: 0.1),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
       ),
     );
@@ -207,7 +237,7 @@ class _LoginPageState extends State<LoginPage> {
       width: size, height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: RadialGradient(colors: [color.withOpacity(0.3), color.withOpacity(0)]),
+        gradient: RadialGradient(colors: [color.withValues(alpha: 0.3), color.withValues(alpha: 0)]),
       ),
     );
   }

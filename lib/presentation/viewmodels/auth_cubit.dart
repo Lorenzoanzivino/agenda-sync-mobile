@@ -18,7 +18,6 @@ class AuthCubit extends Cubit<AuthState> {
       final token = prefs.getString('userToken');
 
       if (token != null) {
-        // Se c'è già il token, potresti voler aggiornare comunque l'FCM Token
         _setupNotifications();
         emit(AuthAuthenticated(UserModel(id: '1', email: '', nome: 'Utente')));
       } else {
@@ -33,10 +32,7 @@ class AuthCubit extends Cubit<AuthState> {
     emit(AuthLoading());
     try {
       final user = await _authService.login(email, password);
-
-      // Inizializza notifiche e invia token al backend
       await _setupNotifications();
-
       emit(AuthAuthenticated(user));
     } catch (e) {
       emit(const AuthError('Credenziali non valide. Riprova.'));
@@ -46,16 +42,8 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> signup(String nome, String email, String password, String dataNascita) async {
     emit(AuthLoading());
     try {
-      // 1. Esegue la registrazione sul backend
-      await _authService.signup(nome, email, password, dataNascita);
-
-      // 2. Esegue immediatamente il login automatico per ottenere il token JWT
-      final userWithToken = await _authService.login(email, password);
-
-      // 3. Inizializza notifiche
+      final userWithToken = await _authService.signup(nome, email, password, dataNascita);
       await _setupNotifications();
-
-      // 4. Cambia stato con l'utente provvisto di token
       emit(AuthAuthenticated(userWithToken));
     } catch (e) {
       emit(AuthError(e.toString().replaceAll('Exception: ', '')));
