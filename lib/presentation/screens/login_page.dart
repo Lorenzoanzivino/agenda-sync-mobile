@@ -21,7 +21,12 @@ class _LoginPageState extends State<LoginPage> {
   final _nomeController = TextEditingController();
   final _dataNascitaController = TextEditingController();
 
-  final _storage = const FlutterSecureStorage();
+  // FIX: Aggiunta parametro obbligatorio per stabilità su Android
+  final _storage = const FlutterSecureStorage(
+    aOptions: AndroidOptions(
+      encryptedSharedPreferences: true,
+    ),
+  );
 
   bool _isLogin = true;
 
@@ -70,12 +75,19 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  void _submitForm(BuildContext context) {
+  // FIX: Reso asincrono per attendere il salvataggio PRIMA del blocco di rete
+  Future<void> _submitForm(BuildContext context) async {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
     if (_isLogin) {
-      context.read<AuthCubit>().login(email, password);
+      // Salvataggio sicuro anticipato
+      await _storage.write(key: 'saved_email', value: email);
+      await _storage.write(key: 'saved_password', value: password);
+
+      if (context.mounted) {
+        context.read<AuthCubit>().login(email, password);
+      }
     } else {
       final nome = _nomeController.text.trim();
       final dataNascita = _dataNascitaController.text;
@@ -87,7 +99,13 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-      context.read<AuthCubit>().signup(nome, email, password, dataNascita);
+      // Salvataggio sicuro anticipato
+      await _storage.write(key: 'saved_email', value: email);
+      await _storage.write(key: 'saved_password', value: password);
+
+      if (context.mounted) {
+        context.read<AuthCubit>().signup(nome, email, password, dataNascita);
+      }
     }
   }
 
@@ -104,16 +122,13 @@ class _LoginPageState extends State<LoginPage> {
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 30),
               child: BlocConsumer<AuthCubit, AuthState>(
-                listener: (context, state) async {
+                listener: (context, state) {
                   if (state is AuthError) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(state.message), backgroundColor: Colors.redAccent),
                     );
                   } else if (state is AuthAuthenticated) {
-                    await _storage.write(key: 'saved_email', value: _emailController.text.trim());
-                    await _storage.write(key: 'saved_password', value: _passwordController.text);
-
-                    if (!context.mounted) return;
+                    // FIX: Rimossa la logica di salvataggio storage da qui
                     Navigator.of(context).pushReplacement(
                       MaterialPageRoute(builder: (_) => const HomePage()),
                     );

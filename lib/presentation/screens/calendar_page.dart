@@ -39,12 +39,17 @@ class _CalendarPageState extends State<CalendarPage> {
     _pageController = PageController(initialPage: widget.initialIndex);
   }
 
+  // FIX: Conversione sicura e uniforme dei Timezone verso UTC
   List<TaskModel> _getEventsForDay(DateTime day, List<TaskModel> allTasks, bool isSharedView, String? calendarId) {
-    final filtered = allTasks.where((task) {
-      final taskDate = DateTime.tryParse(task.dataInizio)?.toLocal() ?? DateTime.now();
-      final isSameDay = taskDate.year == day.year && taskDate.month == day.month && taskDate.day == day.day;
+    final targetDayUtc = DateTime.utc(day.year, day.month, day.day);
 
-      final isTaskShared = task.sharedCalendarNome != null;
+    final filtered = allTasks.where((task) {
+      final parsedDate = DateTime.tryParse(task.dataInizio) ?? DateTime.now();
+      final taskDayUtc = DateTime.utc(parsedDate.year, parsedDate.month, parsedDate.day);
+
+      final isSameDay = taskDayUtc == targetDayUtc;
+
+      final isTaskShared = task.sharedCalendarId != null;
       final matchesType = isSharedView ? isTaskShared : !isTaskShared;
       final matchesCalendar = !isSharedView || task.sharedCalendarId == calendarId;
 
@@ -408,7 +413,7 @@ class _CalendarPageState extends State<CalendarPage> {
                     return GlassTaskCard(
                       title: task.titolo,
                       description: task.descrizione,
-                      isShared: task.sharedCalendarNome != null,
+                      isShared: task.sharedCalendarId != null,
                       onTap: () => showTaskDetailsModal(context, context.read<TaskCubit>(), task),
                     );
                   },
