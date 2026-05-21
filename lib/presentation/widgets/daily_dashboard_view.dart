@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../domain/models/task_model.dart';
 import '../viewmodels/task_cubit.dart';
 import 'glass_task_card.dart';
 import 'task_modals.dart';
@@ -70,14 +69,18 @@ class DailyDashboardView extends StatelessWidget {
                 } else if (state is TaskLoaded) {
 
                   final now = DateTime.now();
-                  final todayStr = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+                  // FIX: Conversione a UTC per uniformità con il calendario
+                  final targetDayUtc = DateTime.utc(now.year, now.month, now.day);
 
                   final filteredTasks = state.tasks.where((task) {
-                    final taskDate = DateTime.tryParse(task.dataInizio)?.toLocal() ?? now;
-                    final taskDateStr = "${taskDate.year}-${taskDate.month.toString().padLeft(2, '0')}-${taskDate.day.toString().padLeft(2, '0')}";
+                    final parsedDate = DateTime.tryParse(task.dataInizio) ?? now;
+                    // FIX: Conversione a UTC per uniformità con il calendario
+                    final taskDayUtc = DateTime.utc(parsedDate.year, parsedDate.month, parsedDate.day);
 
-                    final isSameDay = taskDateStr == todayStr;
-                    final isTaskShared = task.sharedCalendarNome != null;
+                    final isSameDay = taskDayUtc == targetDayUtc;
+
+                    // FIX: Controllo basato sull'ID invece che sul nome
+                    final isTaskShared = task.sharedCalendarId != null;
                     final matchesType = isSharedView ? isTaskShared : !isTaskShared;
                     final matchesCalendar = !isSharedView || task.sharedCalendarId == calendarId;
 
@@ -113,7 +116,8 @@ class DailyDashboardView extends StatelessWidget {
                       return GlassTaskCard(
                         title: task.titolo,
                         description: task.descrizione,
-                        isShared: task.sharedCalendarNome != null,
+                        // FIX: Controllo basato sull'ID
+                        isShared: task.sharedCalendarId != null,
                         onTap: () => showTaskDetailsModal(context, context.read<TaskCubit>(), task),
                       );
                     },

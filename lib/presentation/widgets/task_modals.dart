@@ -149,24 +149,14 @@ class _TaskFormState extends State<_TaskForm> {
     super.initState();
     bgColor = widget.isSharedContext ? AppAtmospheres.sharedBg : AppAtmospheres.privateBg;
 
-    if (widget.isSharedContext) {
-      final calState = context.read<CalendarCubit>().state;
-      if (calState is CalendarLoaded && calState.sharedCalendars.isNotEmpty) {
-        if (widget.task != null && widget.task!.sharedCalendarId != null) {
-          bool exists = calState.sharedCalendars.any((c) => c.id == widget.task!.sharedCalendarId);
-          _selectedSharedCalendarId = exists ? widget.task!.sharedCalendarId : calState.sharedCalendars.first.id;
-        } else {
-          _selectedSharedCalendarId = calState.sharedCalendars.first.id;
-        }
-      }
-    }
-
     if (widget.task != null) {
       final t = widget.task!;
       _titoloCtrl.text = t.titolo;
       _descCtrl.text = t.descrizione;
       _isAllDay = t.tuttoIlGiorno;
       _priorita = t.priorita;
+
+      _selectedSharedCalendarId = t.sharedCalendarId;
 
       final start = DateTime.tryParse(t.dataInizio)?.toLocal() ?? DateTime.now();
       final end = DateTime.tryParse(t.dataFine)?.toLocal() ?? DateTime.now().add(const Duration(hours: 1));
@@ -279,6 +269,11 @@ class _TaskFormState extends State<_TaskForm> {
                 BlocBuilder<CalendarCubit, CalendarState>(
                   builder: (context, state) {
                     if (state is CalendarLoaded && state.sharedCalendars.isNotEmpty) {
+                      bool idExists = state.sharedCalendars.any((c) => c.id == _selectedSharedCalendarId);
+                      if (!idExists) {
+                        _selectedSharedCalendarId = state.sharedCalendars.first.id;
+                      }
+
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [

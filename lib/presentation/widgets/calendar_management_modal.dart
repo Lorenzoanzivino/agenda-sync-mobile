@@ -27,15 +27,16 @@ class _CalendarManagementModalState extends State<_CalendarManagementModal> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    // FIX: Aggiunto safeBottom per evitare sovrapposizioni con la UI di sistema
+    final safeBottom = MediaQuery.of(context).padding.bottom;
 
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
-          padding: EdgeInsets.fromLTRB(30, 30, 30, bottomInset + 30),
+          padding: EdgeInsets.fromLTRB(30, 30, 30, bottomInset + safeBottom + 30),
           decoration: BoxDecoration(
-            // COLORE MODIFICATO IN SHARED
             color: AppAtmospheres.sharedBg.withValues(alpha: 0.9),
             border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.2), width: 1.5)),
           ),
@@ -60,7 +61,6 @@ class _CalendarManagementModalState extends State<_CalendarManagementModal> {
                   const Text("Gestisci Condivisione", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 20),
 
-                  // Toggle Button
                   Row(
                     children: [
                       Expanded(
@@ -94,7 +94,7 @@ class _CalendarManagementModalState extends State<_CalendarManagementModal> {
                   const SizedBox(height: 30),
 
                   if (_isCreating) ...[
-                    const Text("Nome Calendario (es. Io e Simona)", style: TextStyle(color: Colors.white70, fontSize: 14)),
+                    const Text("Nome Calendario (es. Lavoro)", style: TextStyle(color: Colors.white70, fontSize: 14)),
                     const SizedBox(height: 10),
                     TextField(
                       controller: _nomeCtrl,
@@ -107,7 +107,7 @@ class _CalendarManagementModalState extends State<_CalendarManagementModal> {
                     TextField(
                       controller: _codeCtrl,
                       style: const TextStyle(color: Colors.white),
-                      decoration: InputDecoration(hintText: 'XYZ-123', hintStyle: TextStyle(color: Colors.white54), filled: true, fillColor: Colors.white.withValues(alpha: 0.1), border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none)),
+                      decoration: InputDecoration(hintText: 'XYZ-123', hintStyle: const TextStyle(color: Colors.white54), filled: true, fillColor: Colors.white.withValues(alpha: 0.1), border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none)),
                     ),
                   ],
 
@@ -141,7 +141,6 @@ class _CalendarManagementModalState extends State<_CalendarManagementModal> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        // COLORE MODIFICATO IN SHARED
         backgroundColor: AppAtmospheres.sharedBg,
         title: const Text("Codice Generato", style: TextStyle(color: Colors.white)),
         content: Column(
