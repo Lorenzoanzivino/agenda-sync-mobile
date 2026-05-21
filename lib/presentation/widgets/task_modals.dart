@@ -44,12 +44,12 @@ class _TaskDetailsModal extends StatelessWidget {
   Widget build(BuildContext context) {
     final start = DateTime.tryParse(task.dataInizio)?.toLocal() ?? DateTime.now();
     final end = DateTime.tryParse(task.dataFine)?.toLocal() ?? DateTime.now();
+    final safeBottom = MediaQuery.of(context).padding.bottom;
 
     final orario = task.tuttoIlGiorno
         ? "Tutto il giorno"
         : "${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')} - ${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}";
 
-    // Colore dinamico in base al task
     final bgColor = task.sharedCalendarNome != null ? AppAtmospheres.sharedBg : AppAtmospheres.privateBg;
 
     return ClipRRect(
@@ -57,7 +57,7 @@ class _TaskDetailsModal extends StatelessWidget {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
-          padding: const EdgeInsets.all(30),
+          padding: EdgeInsets.fromLTRB(30, 30, 30, safeBottom + 20),
           decoration: BoxDecoration(
             color: bgColor.withValues(alpha: 0.9),
             border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.2), width: 1.5)),
@@ -109,7 +109,6 @@ class _TaskDetailsModal extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -153,7 +152,12 @@ class _TaskFormState extends State<_TaskForm> {
     if (widget.isSharedContext) {
       final calState = context.read<CalendarCubit>().state;
       if (calState is CalendarLoaded && calState.sharedCalendars.isNotEmpty) {
-        _selectedSharedCalendarId = calState.sharedCalendars.first.id;
+        if (widget.task != null && widget.task!.sharedCalendarId != null) {
+          bool exists = calState.sharedCalendars.any((c) => c.id == widget.task!.sharedCalendarId);
+          _selectedSharedCalendarId = exists ? widget.task!.sharedCalendarId : calState.sharedCalendars.first.id;
+        } else {
+          _selectedSharedCalendarId = calState.sharedCalendars.first.id;
+        }
       }
     }
 
@@ -255,12 +259,14 @@ class _TaskFormState extends State<_TaskForm> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final safeBottom = MediaQuery.of(context).padding.bottom;
+
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
-          padding: EdgeInsets.fromLTRB(20, 30, 20, bottomInset + 30),
+          padding: EdgeInsets.fromLTRB(20, 30, 20, bottomInset + safeBottom + 20),
           decoration: BoxDecoration(color: bgColor.withValues(alpha: 0.9), border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.2), width: 1.5))),
           child: Column(
             mainAxisSize: MainAxisSize.min,
