@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart'; // Necessario per debugPrint
+import 'package:flutter/foundation.dart';
 import '../../core/network/api_client.dart';
 import '../../domain/models/task_model.dart';
 
@@ -25,16 +25,19 @@ class TaskService {
     bool tuttoIlGiorno = false,
     String? sharedCalendarId,
   }) async {
-    final payload = {
+    final payload = <String, dynamic>{
       "titolo": titolo,
       "descrizione": descrizione,
       "dataInizio": dataInizio.toIso8601String(),
       "dataFine": dataFine.toIso8601String(),
       "tuttoIlGiorno": tuttoIlGiorno,
       "priorita": priorita,
-      "status": "TODO",
-      "sharedCalendarId": sharedCalendarId
+      "status": "TODO"
     };
+
+    if (sharedCalendarId != null) {
+      payload["sharedCalendarId"] = sharedCalendarId;
+    }
 
     debugPrint("📤 Inviando POST a /tasks. Payload: $payload");
     final response = await _apiClient.post('/tasks', payload);
@@ -63,16 +66,19 @@ class TaskService {
     bool tuttoIlGiorno = false,
     String? sharedCalendarId,
   }) async {
-    final payload = {
+    final payload = <String, dynamic>{
       "titolo": titolo,
       "descrizione": descrizione,
       "dataInizio": dataInizio.toIso8601String(),
       "dataFine": dataFine.toIso8601String(),
       "tuttoIlGiorno": tuttoIlGiorno,
       "priorita": priorita,
-      "status": "TODO",
-      "sharedCalendarId": sharedCalendarId
+      "status": "TODO"
     };
+
+    if (sharedCalendarId != null) {
+      payload["sharedCalendarId"] = sharedCalendarId;
+    }
 
     final response = await _apiClient.put('/tasks/$id', payload);
     if (response.statusCode == 200) {
