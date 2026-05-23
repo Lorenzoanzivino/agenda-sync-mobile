@@ -177,6 +177,72 @@ class _CalendarPageState extends State<CalendarPage> {
     );
   }
 
+  void _showDayAgendaModal(BuildContext context, DateTime day, List<TaskModel> tasks, Color bgColor) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => MultiBlocProvider(
+        providers: [
+          BlocProvider.value(value: context.read<TaskCubit>()),
+          BlocProvider.value(value: context.read<CalendarCubit>()),
+        ],
+        child: ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: Container(
+              height: MediaQuery.of(context).size.height * 0.75, // Modale occupa il 75% dello schermo
+              padding: const EdgeInsets.fromLTRB(20, 15, 20, 0),
+              decoration: BoxDecoration(
+                color: bgColor.withValues(alpha: 0.9),
+                border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.2), width: 1.5)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 50,
+                      height: 5,
+                      decoration: BoxDecoration(color: Colors.white38, borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                  const SizedBox(height: 25),
+                  Text(
+                    "Agenda del ${day.day.toString().padLeft(2, '0')}/${day.month.toString().padLeft(2, '0')}/${day.year}",
+                    style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 20),
+                  Expanded(
+                    child: tasks.isEmpty
+                        ? const Center(child: Text("Nessun task per questa data", style: TextStyle(color: Colors.white70, fontSize: 16)))
+                        : ListView.builder(
+                      padding: const EdgeInsets.only(bottom: 40),
+                      itemCount: tasks.length,
+                      itemBuilder: (context, index) {
+                        final task = tasks[index];
+                        return GlassTaskCard(
+                          title: task.titolo,
+                          description: task.descrizione,
+                          isShared: task.sharedCalendarId != null,
+                          onTap: () {
+                            Navigator.pop(ctx); // Chiude l'agenda prima di aprire i dettagli
+                            showTaskDetailsModal(context, context.read<TaskCubit>(), task);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<CalendarCubit, CalendarState>(
@@ -342,8 +408,6 @@ class _CalendarPageState extends State<CalendarPage> {
         List<TaskModel> allTasks = [];
         if (state is TaskLoaded) allTasks = state.tasks;
 
-        final selectedDayTasks = _selectedDay != null ? _getEventsForDay(_selectedDay!, allTasks, isSharedView, calendarId) : <TaskModel>[];
-
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Column(
@@ -365,7 +429,30 @@ class _CalendarPageState extends State<CalendarPage> {
                         focusedDay: _focusedDay,
                         rowHeight: 65,
                         selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-                        onDaySelected: (selectedDay, focusedDay) => setState(() { _selectedDay = selectedDay; _focusedDay = focusedDay; }),
+                        onPageChanged: (focusedDay) {
+                          setState(() {
+                            _focusedDay = focusedDay;
+                            _selectedDay = null; // Resetta il giorno selezionato al cambio mese
+                          });
+                        },
+                        onDaySelected: (selectedDay, focusedDay) {
+                          setState(() {
+                            _selectedDay = selectedDay;
+                            _focusedDay = focusedDay;
+                          });
+
+                          final tasksForDay = _getEventsForDay(selectedDay, allTasks, isSharedView, calendarId);
+
+                          // Calcola il colore di sfondo per mantenere coerenza visiva nel modale
+                          Color modalBgColor = AppAtmospheres.privateBg;
+                          if (isSharedView && _cachedCalendars.isNotEmpty) {
+                            int sharedIdx = _calendarIndex - 1;
+                            if (sharedIdx >= _cachedCalendars.length) sharedIdx = _cachedCalendars.length - 1;
+                            modalBgColor = AppAtmospheres.getSharedBg(sharedIdx);
+                          }
+
+                          _showDayAgendaModal(context, selectedDay, tasksForDay, modalBgColor);
+                        },
                         eventLoader: (day) => _getEventsForDay(day, allTasks, isSharedView, calendarId),
                         calendarStyle: const CalendarStyle(defaultTextStyle: TextStyle(color: Colors.white), weekendTextStyle: TextStyle(color: Colors.white70), outsideTextStyle: TextStyle(color: Colors.white38), todayDecoration: BoxDecoration(color: Colors.white38, shape: BoxShape.rectangle, borderRadius: BorderRadius.all(Radius.circular(12))), selectedDecoration: BoxDecoration(color: Colors.white, shape: BoxShape.rectangle, borderRadius: BorderRadius.all(Radius.circular(12))), selectedTextStyle: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
                         headerStyle: const HeaderStyle(formatButtonVisible: false, titleCentered: true, titleTextStyle: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold), leftChevronIcon: Icon(Icons.chevron_left, color: Colors.white), rightChevronIcon: Icon(Icons.chevron_right, color: Colors.white)),
@@ -401,24 +488,7 @@ class _CalendarPageState extends State<CalendarPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
-              Expanded(
-                child: selectedDayTasks.isEmpty
-                    ? const Center(child: Text("Nessun task per questa data", style: TextStyle(color: Colors.white70)))
-                    : ListView.builder(
-                  padding: const EdgeInsets.only(bottom: 120),
-                  itemCount: selectedDayTasks.length,
-                  itemBuilder: (context, index) {
-                    final task = selectedDayTasks[index];
-                    return GlassTaskCard(
-                      title: task.titolo,
-                      description: task.descrizione,
-                      isShared: task.sharedCalendarId != null,
-                      onTap: () => showTaskDetailsModal(context, context.read<TaskCubit>(), task),
-                    );
-                  },
-                ),
-              ),
+              const Spacer(), // Riempie lo spazio residuo senza forzare rendering di liste
             ],
           ),
         );
