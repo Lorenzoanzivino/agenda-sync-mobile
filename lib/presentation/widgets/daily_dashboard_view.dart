@@ -105,7 +105,7 @@ class _DailyDashboardViewState extends State<DailyDashboardView> {
               if (_isSelectionMode)
                 TextButton.icon(
                   onPressed: () {
-                    context.read<TaskCubit>().bulkDeleteTasks(_selectedTaskIds);
+                    context.read<TaskCubit>().bulkDeleteTasks(List<String>.from(_selectedTaskIds));
                     _exitSelectionMode();
                   },
                   icon: const Icon(Icons.delete_sweep, color: Colors.redAccent),
