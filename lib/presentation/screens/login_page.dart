@@ -79,6 +79,23 @@ class _LoginPageState extends State<LoginPage> {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
+    // VALIDAZIONE: Campi obbligatori comuni
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("I campi obbligatori non possono essere vuoti."), backgroundColor: Colors.redAccent),
+      );
+      return;
+    }
+
+    // VALIDAZIONE: Formato Email (Regex Base)
+    final emailRegex = RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+");
+    if (!emailRegex.hasMatch(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Formato email non valido. Es: utente@email.com"), backgroundColor: Colors.orangeAccent),
+      );
+      return;
+    }
+
     if (_isLogin) {
       await _storage.write(key: 'saved_email', value: email);
       await _storage.write(key: 'saved_password', value: password);
@@ -90,9 +107,19 @@ class _LoginPageState extends State<LoginPage> {
       final nome = _nomeController.text.trim();
       final dataNascita = _dataNascitaController.text;
 
+      // VALIDAZIONE: Campi obbligatori Registrazione
       if (nome.isEmpty || dataNascita.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text(AppStrings.errCompilaTuttiCampi), backgroundColor: Colors.redAccent),
+          const SnackBar(content: Text("Tutti i campi sono obbligatori per la registrazione."), backgroundColor: Colors.redAccent),
+        );
+        return;
+      }
+
+      // VALIDAZIONE: Regole Password (minimo 6 caratteri e 1 numero)
+      final passwordRegex = RegExp(r"^(?=.*[0-9]).{6,}$");
+      if (!passwordRegex.hasMatch(password)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("La password deve contenere almeno 6 caratteri e un numero."), backgroundColor: Colors.orangeAccent),
         );
         return;
       }
