@@ -2,13 +2,13 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/constants/colors.dart';
+import '../../core/constants/app_strings.dart';
 import '../../domain/models/task_model.dart';
-import '../../domain/models/shared_calendar_model.dart';
 import '../viewmodels/task_cubit.dart';
 import '../viewmodels/calendar_cubit.dart';
 import 'atmosphere_background.dart';
 
-void showTaskFormModal(BuildContext context, TaskCubit taskCubit, {TaskModel? task, bool isShared = false}) {
+void showTaskFormModal(BuildContext context, TaskCubit taskCubit, {TaskModel? task, bool isShared = false, String? forcedCalendarId, DateTime? forcedDate}) {
   final calendarCubit = context.read<CalendarCubit>();
   Navigator.of(context).push(
     MaterialPageRoute(
@@ -18,7 +18,7 @@ void showTaskFormModal(BuildContext context, TaskCubit taskCubit, {TaskModel? ta
           BlocProvider.value(value: taskCubit),
           BlocProvider.value(value: calendarCubit),
         ],
-        child: _TaskFormScreen(task: task, isSharedContext: isShared),
+        child: _TaskFormScreen(task: task, isSharedContext: isShared, forcedCalendarId: forcedCalendarId, forcedDate: forcedDate),
       ),
     ),
   );
@@ -50,10 +50,10 @@ class _TaskDetailsModal extends StatelessWidget {
     final safeBottom = MediaQuery.of(context).padding.bottom;
 
     final orario = task.tuttoIlGiorno
-        ? "Tutto il giorno"
+        ? AppStrings.dettagliDicituraTuttoGiorno
         : "${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')} - ${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}";
 
-    final bgColor = task.sharedCalendarNome != null ? AppAtmospheres.sharedBg : AppAtmospheres.privateBg;
+    final bgColor = task.sharedCalendarId != null ? AppAtmospheres.sharedBg : AppAtmospheres.privateBg;
 
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
@@ -81,7 +81,7 @@ class _TaskDetailsModal extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
                 if (task.descrizione.isNotEmpty) ...[
-                  const Text("Descrizione", style: TextStyle(color: Colors.white54, fontSize: 14)),
+                  const Text(AppStrings.dettagliDescrizioneLabel, style: TextStyle(color: Colors.white54, fontSize: 14)),
                   const SizedBox(height: 5),
                   Text(task.descrizione, style: const TextStyle(color: Colors.white, fontSize: 16)),
                   const SizedBox(height: 30),
@@ -92,10 +92,10 @@ class _TaskDetailsModal extends StatelessWidget {
                       child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(backgroundColor: Colors.white24, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
                         icon: const Icon(Icons.edit, color: Colors.white),
-                        label: const Text('Modifica', style: TextStyle(color: Colors.white)),
+                        label: const Text(AppStrings.btnAnnulla, style: TextStyle(color: Colors.white)),
                         onPressed: () {
                           Navigator.pop(context);
-                          showTaskFormModal(context, context.read<TaskCubit>(), task: task, isShared: task.sharedCalendarNome != null);
+                          showTaskFormModal(context, context.read<TaskCubit>(), task: task, isShared: task.sharedCalendarId != null, forcedCalendarId: task.sharedCalendarId);
                         },
                       ),
                     ),
@@ -104,7 +104,7 @@ class _TaskDetailsModal extends StatelessWidget {
                       child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent.withValues(alpha: 0.8), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
                         icon: const Icon(Icons.delete, color: Colors.white),
-                        label: const Text('Elimina', style: TextStyle(color: Colors.white)),
+                        label: const Text(AppStrings.btnElimina, style: TextStyle(color: Colors.white)),
                         onPressed: () {
                           context.read<TaskCubit>().deleteTask(task.id);
                           Navigator.pop(context);
@@ -125,8 +125,10 @@ class _TaskDetailsModal extends StatelessWidget {
 class _TaskFormScreen extends StatefulWidget {
   final TaskModel? task;
   final bool isSharedContext;
+  final String? forcedCalendarId;
+  final DateTime? forcedDate;
 
-  const _TaskFormScreen({this.task, this.isSharedContext = false});
+  const _TaskFormScreen({this.task, this.isSharedContext = false, this.forcedCalendarId, this.forcedDate});
 
   @override
   State<_TaskFormScreen> createState() => _TaskFormScreenState();
@@ -153,6 +155,10 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
   void initState() {
     super.initState();
     bgColor = widget.isSharedContext ? AppAtmospheres.sharedBg : AppAtmospheres.privateBg;
+    _selectedSharedCalendarId = widget.forcedCalendarId;
+    if (widget.forcedDate != null) {
+      _selectedDate = widget.forcedDate!;
+    }
 
     if (widget.task != null) {
       final t = widget.task!;
@@ -160,7 +166,6 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
       _descCtrl.text = t.descrizione;
       _isAllDay = t.tuttoIlGiorno;
       _priorita = t.priorita;
-
       _selectedSharedCalendarId = t.sharedCalendarId;
 
       final start = DateTime.tryParse(t.dataInizio)?.toLocal() ?? DateTime.now();
@@ -254,6 +259,9 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
   @override
   Widget build(BuildContext context) {
     final safeBottom = MediaQuery.of(context).padding.bottom;
+    String screenTitle = widget.task == null
+        ? (widget.isSharedContext ? AppStrings.taskCondivisoTitle : AppStrings.taskPrivatoTitle)
+        : AppStrings.taskModificaTitle;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -262,10 +270,7 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
-        title: Text(
-          widget.task == null ? "Nuovo Task ${widget.isSharedContext ? 'Condiviso' : 'Privato'}" : "Modifica Task",
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
+        title: Text(screenTitle, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
       body: Stack(
         children: [
@@ -279,46 +284,6 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (widget.isSharedContext) ...[
-                    BlocBuilder<CalendarCubit, CalendarState>(
-                      builder: (context, state) {
-                        if (state is CalendarLoaded && state.sharedCalendars.isNotEmpty) {
-                          bool idExists = state.sharedCalendars.any((c) => c.id == _selectedSharedCalendarId);
-                          if (!idExists) {
-                            _selectedSharedCalendarId = state.sharedCalendars.first.id;
-                          }
-
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text("Calendario:", style: TextStyle(color: Colors.white70, fontSize: 16)),
-                              const SizedBox(height: 5),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
-                                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(15)),
-                                child: DropdownButtonHideUnderline(
-                                  child: DropdownButton<String>(
-                                    isExpanded: true,
-                                    value: _selectedSharedCalendarId,
-                                    dropdownColor: bgColor,
-                                    style: const TextStyle(color: Colors.white, fontSize: 16),
-                                    icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
-                                    items: state.sharedCalendars.map((SharedCalendarModel cal) {
-                                      return DropdownMenuItem<String>(value: cal.id, child: Text(cal.nome));
-                                    }).toList(),
-                                    onChanged: (val) => setState(() => _selectedSharedCalendarId = val),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 15),
-                            ],
-                          );
-                        }
-                        return const SizedBox.shrink();
-                      },
-                    ),
-                  ],
-
                   GestureDetector(
                     onTap: _pickDate,
                     child: Container(
@@ -327,7 +292,7 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text("Giorno:", style: TextStyle(color: Colors.white70, fontSize: 16)),
+                          const Text(AppStrings.formGiorno, style: TextStyle(color: Colors.white70, fontSize: 16)),
                           Text("${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}", style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                         ],
                       ),
@@ -336,13 +301,13 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
                   const SizedBox(height: 15),
                   TextField(
                     controller: _titoloCtrl, style: const TextStyle(color: Colors.white),
-                    decoration: InputDecoration(hintText: 'Titolo', hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)), filled: true, fillColor: Colors.white.withValues(alpha: 0.1), border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none)),
+                    decoration: InputDecoration(hintText: AppStrings.formTitoloHint, hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)), filled: true, fillColor: Colors.white.withValues(alpha: 0.1), border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none)),
                   ),
                   const SizedBox(height: 15),
                   Theme(
                     data: ThemeData(unselectedWidgetColor: Colors.white54),
                     child: CheckboxListTile(
-                      title: const Text("Tutto il giorno", style: TextStyle(color: Colors.white)),
+                      title: const Text(AppStrings.formTuttoIlGiorno, style: TextStyle(color: Colors.white)),
                       value: _isAllDay, onChanged: (v) => setState(() => _isAllDay = v ?? false),
                       controlAffinity: ListTileControlAffinity.leading, contentPadding: EdgeInsets.zero, activeColor: Colors.white, checkColor: bgColor,
                     ),
@@ -350,27 +315,27 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
                   const SizedBox(height: 10),
                   if (!_isAllDay) ...[
                     Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      const Text("Inizio:", style: TextStyle(color: Colors.white70, fontSize: 16)),
+                      const Text(AppStrings.formInizio, style: TextStyle(color: Colors.white70, fontSize: 16)),
                       Row(children: [_buildTimeDropdown(_startHour, _hours, (v) => setState(() => _startHour = v!)), const Text(" : ", style: TextStyle(color: Colors.white, fontSize: 16)), _buildTimeDropdown(_startMinute, _minutes, (v) => setState(() => _startMinute = v!))])
                     ]),
                     const SizedBox(height: 15),
                     Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      const Text("Fine:", style: TextStyle(color: Colors.white70, fontSize: 16)),
+                      const Text(AppStrings.formFine, style: TextStyle(color: Colors.white70, fontSize: 16)),
                       Row(children: [_buildTimeDropdown(_endHour, _hours, (v) => setState(() => _endHour = v!)), const Text(" : ", style: TextStyle(color: Colors.white, fontSize: 16)), _buildTimeDropdown(_endMinute, _minutes, (v) => setState(() => _endMinute = v!))])
                     ]),
                   ],
                   const SizedBox(height: 15),
                   TextField(
                     controller: _descCtrl, style: const TextStyle(color: Colors.white), maxLines: 2,
-                    decoration: InputDecoration(hintText: 'Descrizione (Opzionale)', hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)), filled: true, fillColor: Colors.white.withValues(alpha: 0.1), border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none)),
+                    decoration: InputDecoration(hintText: AppStrings.formDescrizioneHint, hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)), filled: true, fillColor: Colors.white.withValues(alpha: 0.1), border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none)),
                   ),
                   const SizedBox(height: 20),
                   SizedBox(
                       width: double.infinity, height: 50,
                       child: ElevatedButton(
                           style: ElevatedButton.styleFrom(backgroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
-                          onPressed: (widget.isSharedContext && _selectedSharedCalendarId == null) ? null : _submit,
-                          child: const Text('SALVA', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold))
+                          onPressed: _submit,
+                          child: const Text(AppStrings.btnSalva, style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold))
                       )
                   )
                 ],

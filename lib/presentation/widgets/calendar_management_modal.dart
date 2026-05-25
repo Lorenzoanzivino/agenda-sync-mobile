@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/constants/colors.dart';
+import '../../core/constants/app_strings.dart';
 import '../viewmodels/calendar_cubit.dart';
 
 void showCalendarManagementModal(BuildContext context) {
@@ -27,7 +28,6 @@ class _CalendarManagementModalState extends State<_CalendarManagementModal> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    // FIX: Aggiunto safeBottom per evitare sovrapposizioni con la UI di sistema
     final safeBottom = MediaQuery.of(context).padding.bottom;
 
     return ClipRRect(
@@ -58,7 +58,7 @@ class _CalendarManagementModalState extends State<_CalendarManagementModal> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Gestisci Condivisione", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                  const Text(AppStrings.gestisciCondivisioneTitle, style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 20),
 
                   Row(
@@ -72,7 +72,7 @@ class _CalendarManagementModalState extends State<_CalendarManagementModal> {
                               color: _isCreating ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
                               borderRadius: BorderRadius.circular(15),
                             ),
-                            child: const Center(child: Text("Crea Nuovo", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                            child: const Center(child: Text(AppStrings.tabCreaNuovo, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
                           ),
                         ),
                       ),
@@ -85,7 +85,7 @@ class _CalendarManagementModalState extends State<_CalendarManagementModal> {
                               color: !_isCreating ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
                               borderRadius: BorderRadius.circular(15),
                             ),
-                            child: const Center(child: Text("Usa Codice", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                            child: const Center(child: Text(AppStrings.tabUsaCodice, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
                           ),
                         ),
                       ),
@@ -94,7 +94,7 @@ class _CalendarManagementModalState extends State<_CalendarManagementModal> {
                   const SizedBox(height: 30),
 
                   if (_isCreating) ...[
-                    const Text("Nome Calendario (es. Lavoro)", style: TextStyle(color: Colors.white70, fontSize: 14)),
+                    const Text(AppStrings.labelNomeCalendario, style: TextStyle(color: Colors.white70, fontSize: 14)),
                     const SizedBox(height: 10),
                     TextField(
                       controller: _nomeCtrl,
@@ -102,7 +102,7 @@ class _CalendarManagementModalState extends State<_CalendarManagementModal> {
                       decoration: InputDecoration(filled: true, fillColor: Colors.white.withValues(alpha: 0.1), border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none)),
                     ),
                   ] else ...[
-                    const Text("Inserisci Codice di Invito", style: TextStyle(color: Colors.white70, fontSize: 14)),
+                    const Text(AppStrings.labelCodiceInvito, style: TextStyle(color: Colors.white70, fontSize: 14)),
                     const SizedBox(height: 10),
                     TextField(
                       controller: _codeCtrl,
@@ -125,7 +125,7 @@ class _CalendarManagementModalState extends State<_CalendarManagementModal> {
                       },
                       child: state is CalendarLoading
                           ? const CircularProgressIndicator()
-                          : const Text('CONFERMA', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                          : const Text(AppStrings.btnConferma, style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],
@@ -142,11 +142,11 @@ class _CalendarManagementModalState extends State<_CalendarManagementModal> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppAtmospheres.sharedBg,
-        title: const Text("Codice Generato", style: TextStyle(color: Colors.white)),
+        title: const Text(AppStrings.dialogCodiceGenerato, style: TextStyle(color: Colors.white)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text("Condividi questo codice con l'altro utente:", style: TextStyle(color: Colors.white70)),
+            const Text(AppStrings.dialogCodiceCorpo, style: TextStyle(color: Colors.white70)),
             const SizedBox(height: 20),
             SelectableText(code, style: const TextStyle(color: Colors.cyanAccent, fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: 2)),
           ],
@@ -155,16 +155,16 @@ class _CalendarManagementModalState extends State<_CalendarManagementModal> {
           TextButton(
             onPressed: () {
               Clipboard.setData(ClipboardData(text: code));
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Copiato negli appunti!")));
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(AppStrings.snackCopiato)));
             },
-            child: const Text("COPIA", style: TextStyle(color: Colors.white)),
+            child: const Text(AppStrings.btnCopia, style: TextStyle(color: Colors.white)),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
               Navigator.pop(context);
             },
-            child: const Text("CHIUDI", style: TextStyle(color: Colors.white)),
+            child: const Text(AppStrings.btnChiudi, style: TextStyle(color: Colors.white)),
           ),
         ],
       ),

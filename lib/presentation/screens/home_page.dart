@@ -1,7 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/constants/colors.dart';
+import '../../core/constants/app_strings.dart';
 import '../../domain/models/shared_calendar_model.dart';
 import '../widgets/atmosphere_background.dart';
 import '../widgets/daily_dashboard_view.dart';
@@ -73,9 +75,9 @@ class _HomePageState extends State<HomePage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text("Impostazioni", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                const Text(AppStrings.impostazioni, style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 20),
-                const Text("Scegli l'orario del briefing mattutino:", style: TextStyle(color: Colors.white70, fontSize: 16)),
+                const Text(AppStrings.briefingLabel, style: TextStyle(color: Colors.white70, fontSize: 16)),
                 const SizedBox(height: 10),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 15),
@@ -94,7 +96,7 @@ class _HomePageState extends State<HomePage> {
                         if (val != null) {
                           setState(() => _preferredNotificationTime = val);
                           Navigator.pop(ctx);
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Orario aggiornato alle $val"), backgroundColor: Colors.green));
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("${AppStrings.snackOrarioAggiornato}$val"), backgroundColor: Colors.green));
                         }
                       },
                     ),
@@ -111,7 +113,7 @@ class _HomePageState extends State<HomePage> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15), side: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
                     ),
                     icon: const Icon(Icons.people_alt, color: Colors.white),
-                    label: const Text('Gestisci Condivisione Calendari', style: TextStyle(color: Colors.white)),
+                    label: const Text(AppStrings.btnGestisciCondivisione, style: TextStyle(color: Colors.white)),
                     onPressed: () {
                       Navigator.pop(ctx);
                       showCalendarManagementModal(context);
@@ -132,26 +134,58 @@ class _HomePageState extends State<HomePage> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1E1E1E),
-        title: const Text("Elimina Calendario", style: TextStyle(color: Colors.white)),
-        content: Text("Sei sicuro di voler eliminare il calendario '$calendarName'? Questa azione è irreversibile.", style: const TextStyle(color: Colors.white70)),
+        title: const Text(AppStrings.alertEliminaCalTitolo, style: TextStyle(color: Colors.white)),
+        content: Text(AppStrings.alertEliminaCalCorpo.replaceFirst('{name}', calendarName), style: const TextStyle(color: Colors.white70)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text("Annulla", style: TextStyle(color: Colors.white54)),
+            child: const Text(AppStrings.btnAnnulla, style: TextStyle(color: Colors.white54)),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
-
               int totalShared = _cachedCalendars.length;
-
               if (totalShared > 1 && _dashboardIndex == totalShared) {
                 _pageController.animateToPage(_dashboardIndex - 1, duration: const Duration(milliseconds: 300), curve: Curves.ease);
               }
-
               context.read<CalendarCubit>().deleteCalendar(calendarId);
             },
-            child: const Text("Elimina", style: TextStyle(color: Colors.redAccent)),
+            child: const Text(AppStrings.btnElimina, style: TextStyle(color: Colors.redAccent)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showOtpInfoDialog(String calendarName, String calendarId) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppAtmospheres.sharedBg,
+        title: const Text(AppStrings.dialogVisualizzaOtp, style: TextStyle(color: Colors.white)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("Nome: $calendarName", style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 10),
+            const Text("Usa questo codice ID per far unire un altro utente:", style: TextStyle(color: Colors.white70)),
+            const SizedBox(height: 15),
+            SelectableText(calendarId, style: const TextStyle(color: Colors.cyanAccent, fontSize: 20, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: calendarId));
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(AppStrings.snackCopiato)));
+              Navigator.pop(ctx);
+            },
+            child: const Text(AppStrings.btnCopia, style: TextStyle(color: Colors.white)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text(AppStrings.btnChiudi, style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -215,10 +249,10 @@ class _HomePageState extends State<HomePage> {
                           itemCount: pageCount,
                           itemBuilder: (context, index) {
                             if (index == 0) {
-                              return const DailyDashboardView(title: "Dashboard Privata", isSharedView: false, calendarId: null);
+                              return const DailyDashboardView(title: AppStrings.dashboardPrivata, isSharedView: false, calendarId: null);
                             } else {
                               if (_cachedCalendars.isEmpty) {
-                                return const DailyDashboardView(title: "Calendario Condiviso", isSharedView: true, calendarId: null);
+                                return const DailyDashboardView(title: AppStrings.calendarioCondivisoDefault, isSharedView: true, calendarId: null);
                               } else {
                                 int calendarIndex = index - 1;
                                 if (calendarIndex >= _cachedCalendars.length) {
@@ -263,16 +297,22 @@ class _HomePageState extends State<HomePage> {
               if (state is AuthAuthenticated) {
                 try {
                   userName = (state as dynamic).user.nome;
-                } catch (_) {
-                  userName = "Utente";
-                }
+                } catch (_) {}
               }
-              return Text("Ciao $userName", style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold));
+              return Text("${AppStrings.ciao} $userName", style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold));
             },
           ),
           Row(
             children: [
               if (isShared && currentCalendar != null) ...[
+                Container(
+                  decoration: const BoxDecoration(color: Colors.white24, shape: BoxShape.circle),
+                  child: IconButton(
+                    icon: const Icon(Icons.info_outline, color: Colors.white),
+                    onPressed: () => _showOtpInfoDialog(currentCalendar!.nome, currentCalendar.id),
+                  ),
+                ),
+                const SizedBox(width: 10),
                 Container(
                   decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
                   child: IconButton(
@@ -290,7 +330,13 @@ class _HomePageState extends State<HomePage> {
                     if (isShared && _cachedCalendars.isEmpty) {
                       showCalendarManagementModal(context);
                     } else {
-                      showTaskFormModal(context, context.read<TaskCubit>(), isShared: isShared);
+                      showTaskFormModal(
+                        context,
+                        context.read<TaskCubit>(),
+                        isShared: isShared,
+                        forcedCalendarId: currentCalendar?.id,
+                        forcedDate: DateTime.now(),
+                      );
                     }
                   },
                 ),
@@ -351,9 +397,9 @@ class _HomePageState extends State<HomePage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildNavItem(Icons.dashboard_rounded, 'Home', 0),
-                  _buildNavItem(Icons.calendar_month_rounded, 'Calendario', 1),
-                  _buildNavItem(Icons.logout_rounded, 'Logout', 2),
+                  _buildNavItem(Icons.dashboard_rounded, AppStrings.navHome, 0),
+                  _buildNavItem(Icons.calendar_month_rounded, AppStrings.navCalendario, 1),
+                  _buildNavItem(Icons.logout_rounded, AppStrings.navLogout, 2),
                 ],
               ),
             ),
