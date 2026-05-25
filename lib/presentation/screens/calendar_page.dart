@@ -29,7 +29,6 @@ class _CalendarPageState extends State<CalendarPage> {
   DateTime? _selectedDay = DateTime.now();
   String _preferredNotificationTime = "08:00";
 
-  // CACHE: Mantiene i calendari visibili durante i caricamenti
   List<SharedCalendarModel> _cachedCalendars = [];
 
   @override
@@ -39,7 +38,6 @@ class _CalendarPageState extends State<CalendarPage> {
     _pageController = PageController(initialPage: widget.initialIndex);
   }
 
-  // FIX: Conversione sicura e uniforme dei Timezone verso UTC
   List<TaskModel> _getEventsForDay(DateTime day, List<TaskModel> allTasks, bool isSharedView, String? calendarId) {
     final targetDayUtc = DateTime.utc(day.year, day.month, day.day);
 
@@ -192,7 +190,7 @@ class _CalendarPageState extends State<CalendarPage> {
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
             child: Container(
-              height: MediaQuery.of(context).size.height * 0.75, // Modale occupa il 75% dello schermo
+              height: MediaQuery.of(context).size.height * 0.75,
               padding: const EdgeInsets.fromLTRB(20, 15, 20, 0),
               decoration: BoxDecoration(
                 color: bgColor.withValues(alpha: 0.9),
@@ -227,7 +225,7 @@ class _CalendarPageState extends State<CalendarPage> {
                           description: task.descrizione,
                           isShared: task.sharedCalendarId != null,
                           onTap: () {
-                            Navigator.pop(ctx); // Chiude l'agenda prima di aprire i dettagli
+                            Navigator.pop(ctx);
                             showTaskDetailsModal(context, context.read<TaskCubit>(), task);
                           },
                         );
@@ -424,6 +422,7 @@ class _CalendarPageState extends State<CalendarPage> {
                     child: Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: TableCalendar<TaskModel>(
+                        locale: 'it_IT', // Aggiunta localizzazione italiana al calendario
                         firstDay: DateTime.utc(2020, 1, 1),
                         lastDay: DateTime.utc(2030, 12, 31),
                         focusedDay: _focusedDay,
@@ -432,7 +431,7 @@ class _CalendarPageState extends State<CalendarPage> {
                         onPageChanged: (focusedDay) {
                           setState(() {
                             _focusedDay = focusedDay;
-                            _selectedDay = null; // Resetta il giorno selezionato al cambio mese
+                            _selectedDay = null;
                           });
                         },
                         onDaySelected: (selectedDay, focusedDay) {
@@ -443,7 +442,6 @@ class _CalendarPageState extends State<CalendarPage> {
 
                           final tasksForDay = _getEventsForDay(selectedDay, allTasks, isSharedView, calendarId);
 
-                          // Calcola il colore di sfondo per mantenere coerenza visiva nel modale
                           Color modalBgColor = AppAtmospheres.privateBg;
                           if (isSharedView && _cachedCalendars.isNotEmpty) {
                             int sharedIdx = _calendarIndex - 1;
@@ -488,7 +486,7 @@ class _CalendarPageState extends State<CalendarPage> {
                   ),
                 ),
               ),
-              const Spacer(), // Riempie lo spazio residuo senza forzare rendering di liste
+              const Spacer(),
             ],
           ),
         );

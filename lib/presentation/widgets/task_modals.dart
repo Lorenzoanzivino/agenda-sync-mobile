@@ -6,18 +6,20 @@ import '../../domain/models/task_model.dart';
 import '../../domain/models/shared_calendar_model.dart';
 import '../viewmodels/task_cubit.dart';
 import '../viewmodels/calendar_cubit.dart';
+import 'atmosphere_background.dart';
 
 void showTaskFormModal(BuildContext context, TaskCubit taskCubit, {TaskModel? task, bool isShared = false}) {
-  showModalBottomSheet(
-    context: context,
-    backgroundColor: Colors.transparent,
-    isScrollControlled: true,
-    builder: (ctx) => MultiBlocProvider(
-      providers: [
-        BlocProvider.value(value: taskCubit),
-        BlocProvider.value(value: context.read<CalendarCubit>()),
-      ],
-      child: _TaskForm(task: task, isSharedContext: isShared),
+  final calendarCubit = context.read<CalendarCubit>();
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      fullscreenDialog: true,
+      builder: (ctx) => MultiBlocProvider(
+        providers: [
+          BlocProvider.value(value: taskCubit),
+          BlocProvider.value(value: calendarCubit),
+        ],
+        child: _TaskFormScreen(task: task, isSharedContext: isShared),
+      ),
     ),
   );
 }
@@ -26,7 +28,7 @@ void showTaskDetailsModal(BuildContext context, TaskCubit taskCubit, TaskModel t
   showModalBottomSheet(
     context: context,
     backgroundColor: Colors.transparent,
-    isScrollControlled: true, // Fix Modale Dettagli
+    isScrollControlled: true,
     builder: (ctx) => MultiBlocProvider(
       providers: [
         BlocProvider.value(value: taskCubit),
@@ -120,17 +122,17 @@ class _TaskDetailsModal extends StatelessWidget {
   }
 }
 
-class _TaskForm extends StatefulWidget {
+class _TaskFormScreen extends StatefulWidget {
   final TaskModel? task;
   final bool isSharedContext;
 
-  const _TaskForm({this.task, this.isSharedContext = false});
+  const _TaskFormScreen({this.task, this.isSharedContext = false});
 
   @override
-  State<_TaskForm> createState() => _TaskFormState();
+  State<_TaskFormScreen> createState() => _TaskFormScreenState();
 }
 
-class _TaskFormState extends State<_TaskForm> {
+class _TaskFormScreenState extends State<_TaskFormScreen> {
   final _titoloCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
   final List<String> _hours = List.generate(24, (index) => index.toString().padLeft(2, '0'));
@@ -251,122 +253,131 @@ class _TaskFormState extends State<_TaskForm> {
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     final safeBottom = MediaQuery.of(context).padding.bottom;
 
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: SingleChildScrollView(
-          child: Container(
-            padding: EdgeInsets.fromLTRB(20, 30, 20, bottomInset + safeBottom + 20),
-            decoration: BoxDecoration(color: bgColor.withValues(alpha: 0.9), border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.2), width: 1.5))),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(widget.task == null ? "Nuovo Task ${widget.isSharedContext ? 'Condiviso' : 'Privato'}" : "Modifica Task", style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 20),
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text(
+          widget.task == null ? "Nuovo Task ${widget.isSharedContext ? 'Condiviso' : 'Privato'}" : "Modifica Task",
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+      ),
+      body: Stack(
+        children: [
+          AtmosphereBackground(
+            backgroundColor: bgColor,
+            circleColors: widget.isSharedContext ? AppAtmospheres.sharedCircles : AppAtmospheres.privateCircles,
+          ),
+          SafeArea(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(20, 20, 20, safeBottom + 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (widget.isSharedContext) ...[
+                    BlocBuilder<CalendarCubit, CalendarState>(
+                      builder: (context, state) {
+                        if (state is CalendarLoaded && state.sharedCalendars.isNotEmpty) {
+                          bool idExists = state.sharedCalendars.any((c) => c.id == _selectedSharedCalendarId);
+                          if (!idExists) {
+                            _selectedSharedCalendarId = state.sharedCalendars.first.id;
+                          }
 
-                if (widget.isSharedContext) ...[
-                  BlocBuilder<CalendarCubit, CalendarState>(
-                    builder: (context, state) {
-                      if (state is CalendarLoaded && state.sharedCalendars.isNotEmpty) {
-                        bool idExists = state.sharedCalendars.any((c) => c.id == _selectedSharedCalendarId);
-                        if (!idExists) {
-                          _selectedSharedCalendarId = state.sharedCalendars.first.id;
-                        }
-
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text("Calendario:", style: TextStyle(color: Colors.white70, fontSize: 16)),
-                            const SizedBox(height: 5),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
-                              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(15)),
-                              child: DropdownButtonHideUnderline(
-                                child: DropdownButton<String>(
-                                  isExpanded: true,
-                                  value: _selectedSharedCalendarId,
-                                  dropdownColor: bgColor,
-                                  style: const TextStyle(color: Colors.white, fontSize: 16),
-                                  icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
-                                  items: state.sharedCalendars.map((SharedCalendarModel cal) {
-                                    return DropdownMenuItem<String>(value: cal.id, child: Text(cal.nome));
-                                  }).toList(),
-                                  onChanged: (val) => setState(() => _selectedSharedCalendarId = val),
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text("Calendario:", style: TextStyle(color: Colors.white70, fontSize: 16)),
+                              const SizedBox(height: 5),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
+                                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(15)),
+                                child: DropdownButtonHideUnderline(
+                                  child: DropdownButton<String>(
+                                    isExpanded: true,
+                                    value: _selectedSharedCalendarId,
+                                    dropdownColor: bgColor,
+                                    style: const TextStyle(color: Colors.white, fontSize: 16),
+                                    icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
+                                    items: state.sharedCalendars.map((SharedCalendarModel cal) {
+                                      return DropdownMenuItem<String>(value: cal.id, child: Text(cal.nome));
+                                    }).toList(),
+                                    onChanged: (val) => setState(() => _selectedSharedCalendarId = val),
+                                  ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(height: 15),
-                          ],
-                        );
-                      }
-                      return const SizedBox.shrink();
-                    },
-                  ),
-                ],
+                              const SizedBox(height: 15),
+                            ],
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      },
+                    ),
+                  ],
 
-                GestureDetector(
-                  onTap: _pickDate,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-                    decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(15)),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text("Giorno:", style: TextStyle(color: Colors.white70, fontSize: 16)),
-                        Text("${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}", style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                      ],
+                  GestureDetector(
+                    onTap: _pickDate,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+                      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(15)),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text("Giorno:", style: TextStyle(color: Colors.white70, fontSize: 16)),
+                          Text("${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}", style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 15),
-                TextField(
-                  controller: _titoloCtrl, style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(hintText: 'Titolo', hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)), filled: true, fillColor: Colors.white.withValues(alpha: 0.1), border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none)),
-                ),
-                const SizedBox(height: 15),
-                Theme(
-                  data: ThemeData(unselectedWidgetColor: Colors.white54),
-                  child: CheckboxListTile(
-                    title: const Text("Tutto il giorno", style: TextStyle(color: Colors.white)),
-                    value: _isAllDay, onChanged: (v) => setState(() => _isAllDay = v ?? false),
-                    controlAffinity: ListTileControlAffinity.leading, contentPadding: EdgeInsets.zero, activeColor: Colors.white, checkColor: bgColor,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                if (!_isAllDay) ...[
-                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    const Text("Inizio:", style: TextStyle(color: Colors.white70, fontSize: 16)),
-                    Row(children: [_buildTimeDropdown(_startHour, _hours, (v) => setState(() => _startHour = v!)), const Text(" : ", style: TextStyle(color: Colors.white, fontSize: 16)), _buildTimeDropdown(_startMinute, _minutes, (v) => setState(() => _startMinute = v!))])
-                  ]),
                   const SizedBox(height: 15),
-                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    const Text("Fine:", style: TextStyle(color: Colors.white70, fontSize: 16)),
-                    Row(children: [_buildTimeDropdown(_endHour, _hours, (v) => setState(() => _endHour = v!)), const Text(" : ", style: TextStyle(color: Colors.white, fontSize: 16)), _buildTimeDropdown(_endMinute, _minutes, (v) => setState(() => _endMinute = v!))])
-                  ]),
+                  TextField(
+                    controller: _titoloCtrl, style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(hintText: 'Titolo', hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)), filled: true, fillColor: Colors.white.withValues(alpha: 0.1), border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none)),
+                  ),
+                  const SizedBox(height: 15),
+                  Theme(
+                    data: ThemeData(unselectedWidgetColor: Colors.white54),
+                    child: CheckboxListTile(
+                      title: const Text("Tutto il giorno", style: TextStyle(color: Colors.white)),
+                      value: _isAllDay, onChanged: (v) => setState(() => _isAllDay = v ?? false),
+                      controlAffinity: ListTileControlAffinity.leading, contentPadding: EdgeInsets.zero, activeColor: Colors.white, checkColor: bgColor,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  if (!_isAllDay) ...[
+                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                      const Text("Inizio:", style: TextStyle(color: Colors.white70, fontSize: 16)),
+                      Row(children: [_buildTimeDropdown(_startHour, _hours, (v) => setState(() => _startHour = v!)), const Text(" : ", style: TextStyle(color: Colors.white, fontSize: 16)), _buildTimeDropdown(_startMinute, _minutes, (v) => setState(() => _startMinute = v!))])
+                    ]),
+                    const SizedBox(height: 15),
+                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                      const Text("Fine:", style: TextStyle(color: Colors.white70, fontSize: 16)),
+                      Row(children: [_buildTimeDropdown(_endHour, _hours, (v) => setState(() => _endHour = v!)), const Text(" : ", style: TextStyle(color: Colors.white, fontSize: 16)), _buildTimeDropdown(_endMinute, _minutes, (v) => setState(() => _endMinute = v!))])
+                    ]),
+                  ],
+                  const SizedBox(height: 15),
+                  TextField(
+                    controller: _descCtrl, style: const TextStyle(color: Colors.white), maxLines: 2,
+                    decoration: InputDecoration(hintText: 'Descrizione (Opzionale)', hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)), filled: true, fillColor: Colors.white.withValues(alpha: 0.1), border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none)),
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                      width: double.infinity, height: 50,
+                      child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(backgroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
+                          onPressed: (widget.isSharedContext && _selectedSharedCalendarId == null) ? null : _submit,
+                          child: const Text('SALVA', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold))
+                      )
+                  )
                 ],
-                const SizedBox(height: 15),
-                TextField(
-                  controller: _descCtrl, style: const TextStyle(color: Colors.white), maxLines: 2,
-                  decoration: InputDecoration(hintText: 'Descrizione (Opzionale)', hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)), filled: true, fillColor: Colors.white.withValues(alpha: 0.1), border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none)),
-                ),
-                const SizedBox(height: 20),
-                SizedBox(
-                    width: double.infinity, height: 50,
-                    child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
-                        onPressed: (widget.isSharedContext && _selectedSharedCalendarId == null) ? null : _submit,
-                        child: const Text('SALVA', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold))
-                    )
-                )
-              ],
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }

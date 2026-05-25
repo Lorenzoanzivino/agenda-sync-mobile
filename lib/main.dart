@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'data/services/auth_service.dart';
 import 'data/services/task_service.dart';
 import 'data/services/calendar_service.dart';
@@ -16,12 +18,13 @@ import 'presentation/viewmodels/calendar_cubit.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Inizializza i formattatori di data per la lingua italiana (per TableCalendar e Intl)
+  await initializeDateFormatting('it_IT', null);
+
   bool isFirebaseSupported = kIsWeb || Platform.isAndroid || Platform.isIOS || Platform.isMacOS;
 
   if (isFirebaseSupported) {
     try {
-      // Quando genererai firebase_options.dart con FlutterFire CLI, usa:
-      // await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
       await Firebase.initializeApp();
     } catch (e) {
       debugPrint("Firebase non inizializzato: $e");
@@ -54,6 +57,15 @@ class AgendaSyncApp extends StatelessWidget {
         title: 'Agenda Sync',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(useMaterial3: true),
+        // Aggiunti i delegati di localizzazione per forzare la lingua italiana
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('it', 'IT'),
+        ],
         home: BlocBuilder<AuthCubit, AuthState>(
           builder: (context, state) {
             if (state is AuthLoading || state is AuthInitial) {
