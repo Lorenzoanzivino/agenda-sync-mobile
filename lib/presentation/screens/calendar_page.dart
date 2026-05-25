@@ -174,7 +174,7 @@ class _CalendarPageState extends State<CalendarPage> {
     );
   }
 
-  void _showOtpInfoDialog(String calendarName, String calendarId) {
+  void _showOtpInfoDialog(String calendarName, String code) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -186,15 +186,15 @@ class _CalendarPageState extends State<CalendarPage> {
           children: [
             Text("Nome: $calendarName", style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
-            const Text("Usa questo codice ID per far unire un altro utente:", style: TextStyle(color: Colors.white70)),
+            const Text("Usa questo codice per far unire un altro utente:", style: TextStyle(color: Colors.white70)),
             const SizedBox(height: 15),
-            SelectableText(calendarId, style: const TextStyle(color: Colors.cyanAccent, fontSize: 20, fontWeight: FontWeight.bold)),
+            SelectableText(code, style: const TextStyle(color: Colors.cyanAccent, fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 2)),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () {
-              Clipboard.setData(ClipboardData(text: calendarId));
+              Clipboard.setData(ClipboardData(text: code));
               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(AppStrings.snackCopiato)));
               Navigator.pop(ctx);
             },
@@ -340,7 +340,7 @@ class _CalendarPageState extends State<CalendarPage> {
                         itemCount: pageCount,
                         itemBuilder: (context, index) {
                           if (index == 0) {
-                            return _buildCalendarView(AppStrings.dashboardPrivata, false, null);
+                            return _buildCalendarView(AppStrings.dashboardPrivata, false, null, null);
                           } else {
                             if (_cachedCalendars.isEmpty) {
                               return _buildEmptySharedView();
@@ -350,7 +350,7 @@ class _CalendarPageState extends State<CalendarPage> {
                                 calendarIndex = _cachedCalendars.length - 1;
                               }
                               final calendar = _cachedCalendars[calendarIndex];
-                              return _buildCalendarView(calendar.nome, true, calendar.id);
+                              return _buildCalendarView(calendar.nome, true, calendar.id, calendar.inviteCode);
                             }
                           }
                         },
@@ -409,18 +409,28 @@ class _CalendarPageState extends State<CalendarPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(AppStrings.visualeMese, style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+          Row(
+            children: [
+              const Text(AppStrings.visualeMese, style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+              if (isShared && currentCalendar != null && currentCalendar.inviteCode != null) ...[
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () => _showOtpInfoDialog(currentCalendar!.nome, currentCalendar.inviteCode!),
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.priority_high, color: Colors.white, size: 20),
+                  ),
+                ),
+              ],
+            ],
+          ),
           Row(
             children: [
               if (isShared && currentCalendar != null) ...[
-                Container(
-                  decoration: const BoxDecoration(color: Colors.white24, shape: BoxShape.circle),
-                  child: IconButton(
-                    icon: const Icon(Icons.info_outline, color: Colors.white),
-                    onPressed: () => _showOtpInfoDialog(currentCalendar!.nome, currentCalendar.id),
-                  ),
-                ),
-                const SizedBox(width: 10),
                 Container(
                   decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
                   child: IconButton(
@@ -464,7 +474,7 @@ class _CalendarPageState extends State<CalendarPage> {
     );
   }
 
-  Widget _buildCalendarView(String title, bool isSharedView, String? calendarId) {
+  Widget _buildCalendarView(String title, bool isSharedView, String? calendarId, String? inviteCode) {
     return BlocBuilder<TaskCubit, TaskState>(
       builder: (context, state) {
         List<TaskModel> allTasks = [];
