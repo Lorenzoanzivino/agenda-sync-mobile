@@ -423,6 +423,7 @@ class _CalendarPageState extends State<CalendarPage> {
                       padding: const EdgeInsets.all(8.0),
                       child: TableCalendar<TaskModel>(
                         locale: 'it_IT', // Aggiunta localizzazione italiana al calendario
+                        startingDayOfWeek: StartingDayOfWeek.monday,
                         firstDay: DateTime.utc(2020, 1, 1),
                         lastDay: DateTime.utc(2030, 12, 31),
                         focusedDay: _focusedDay,
