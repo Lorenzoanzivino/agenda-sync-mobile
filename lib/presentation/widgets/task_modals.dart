@@ -92,7 +92,7 @@ class _TaskDetailsModal extends StatelessWidget {
                       child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(backgroundColor: Colors.white24, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
                         icon: const Icon(Icons.edit, color: Colors.white),
-                        label: const Text(AppStrings.btnAnnulla, style: TextStyle(color: Colors.white)),
+                        label: const Text('Modifica', style: TextStyle(color: Colors.white)), // Fix Punto 6
                         onPressed: () {
                           Navigator.pop(context);
                           showTaskFormModal(context, context.read<TaskCubit>(), task: task, isShared: task.sharedCalendarId != null, forcedCalendarId: task.sharedCalendarId);
@@ -140,14 +140,8 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
   final List<String> _hours = List.generate(24, (index) => index.toString().padLeft(2, '0'));
   final List<String> _minutes = ['00', '15', '30', '45'];
 
-  // Palette Colori Disponibili Stile Google Calendar
   final List<String> _colorsPalette = [
-    '#06B6D4', // Ciano
-    '#10B981', // Smeraldo
-    '#E11D48', // Lampone
-    '#F59E0B', // Ambra
-    '#6366F1', // Indaco
-    '#F97316', // Arancio Neon
+    '#06B6D4', '#10B981', '#E11D48', '#F59E0B', '#6366F1', '#F97316',
   ];
 
   String _selectedColor = '#06B6D4';
@@ -215,7 +209,13 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
   }
 
   void _submit() {
-    if (_titoloCtrl.text.isEmpty) return;
+    // Fix Punto 12: Banner errore campo vuoto
+    if (_titoloCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Il campo obbligatorio non può essere vuoto.'), backgroundColor: Colors.redAccent),
+      );
+      return;
+    }
 
     DateTime start;
     DateTime end;
@@ -230,26 +230,26 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
 
     if (widget.task == null) {
       context.read<TaskCubit>().createTask(
-        titolo: _titoloCtrl.text,
-        descrizione: _descCtrl.text,
+        titolo: _titoloCtrl.text.trim(),
+        descrizione: _descCtrl.text.trim(),
         dataInizio: start,
         dataFine: end,
         priorita: _priorita,
         tuttoIlGiorno: _isAllDay,
         sharedCalendarId: _selectedSharedCalendarId,
-        colore: _selectedColor, // Passa il colore esadecimale scelto
+        colore: _selectedColor,
       );
     } else {
       context.read<TaskCubit>().updateTask(
         widget.task!.id,
-        titolo: _titoloCtrl.text,
-        descrizione: _descCtrl.text,
+        titolo: _titoloCtrl.text.trim(),
+        descrizione: _descCtrl.text.trim(),
         dataInizio: start,
         dataFine: end,
         priorita: _priorita,
         tuttoIlGiorno: _isAllDay,
         sharedCalendarId: _selectedSharedCalendarId,
-        colore: _selectedColor, // Passa il colore esadecimale scelto
+        colore: _selectedColor,
       );
     }
     Navigator.of(context).pop();
@@ -319,7 +319,6 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
                   ),
                   const SizedBox(height: 15),
 
-                  // Selettore Colore del Task
                   const Text("Scegli Colore Task:", style: TextStyle(color: Colors.white70, fontSize: 16, fontWeight: FontWeight.w500)),
                   const SizedBox(height: 10),
                   Row(
