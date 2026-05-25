@@ -12,7 +12,7 @@ import '../viewmodels/auth_state.dart';
 import '../viewmodels/task_cubit.dart';
 import '../viewmodels/calendar_cubit.dart';
 import 'calendar_page.dart';
-import 'login_page.dart'; // Aggiunto per il redirect
+import 'login_page.dart';
 
 class HomePage extends StatefulWidget {
   final int initialIndex;
@@ -28,7 +28,6 @@ class _HomePageState extends State<HomePage> {
   String _preferredNotificationTime = "08:00";
   bool _hasFetched = false;
 
-  // CACHE: Mantiene i calendari visibili durante i caricamenti per evitare crash del PageView
   List<SharedCalendarModel> _cachedCalendars = [];
 
   @override
@@ -52,7 +51,7 @@ class _HomePageState extends State<HomePage> {
     if (index == 1) {
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => CalendarPage(initialIndex: _dashboardIndex)));
     } else if (index == 2) {
-      context.read<AuthCubit>().logout(); // Innescherà il BlocListener
+      context.read<AuthCubit>().logout();
     }
   }
 
@@ -161,11 +160,9 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Aggiunto BlocListener per ascoltare il logout
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
         if (state is AuthUnauthenticated) {
-          // Reindirizza alla pagina di Login rimuovendo tutto lo storico
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (context) => const LoginPage()),
                 (route) => false,
@@ -260,7 +257,19 @@ class _HomePageState extends State<HomePage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text("Ciao Lorenzo", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+          BlocBuilder<AuthCubit, AuthState>(
+            builder: (context, state) {
+              String userName = "Utente";
+              if (state is AuthAuthenticated) {
+                try {
+                  userName = (state as dynamic).user.nome;
+                } catch (_) {
+                  userName = "Utente";
+                }
+              }
+              return Text("Ciao $userName", style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold));
+            },
+          ),
           Row(
             children: [
               if (isShared && currentCalendar != null) ...[
@@ -332,12 +341,10 @@ class _HomePageState extends State<HomePage> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
-          // Rimosso height fisso a 90 per permettere alla SafeArea di espandersi
           decoration: BoxDecoration(
               color: Colors.black.withValues(alpha: 0.4),
               border: const Border(top: BorderSide(color: Colors.white10, width: 0.5))
           ),
-          // 2. Aggiunta SafeArea per proteggere i bottoni
           child: SafeArea(
             child: Padding(
               padding: const EdgeInsets.only(bottom: 10, top: 10),

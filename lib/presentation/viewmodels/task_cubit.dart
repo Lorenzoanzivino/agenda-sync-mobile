@@ -30,6 +30,16 @@ class TaskCubit extends Cubit<TaskState> {
 
   TaskCubit(this._taskService) : super(TaskInitial());
 
+  List<TaskModel> _sortTasks(List<TaskModel> tasks) {
+    final sorted = List<TaskModel>.from(tasks);
+    sorted.sort((a, b) {
+      final dateA = DateTime.tryParse(a.dataInizio) ?? DateTime.now();
+      final dateB = DateTime.tryParse(b.dataInizio) ?? DateTime.now();
+      return dateA.compareTo(dateB);
+    });
+    return sorted;
+  }
+
   Future<void> fetchTasks() async {
     emit(TaskLoading());
     try {
@@ -66,7 +76,8 @@ class TaskCubit extends Cubit<TaskState> {
 
       if (state is TaskLoaded) {
         final currentTasks = (state as TaskLoaded).tasks;
-        emit(TaskLoaded(<TaskModel>[newTask, ...currentTasks]));
+        final updatedList = List<TaskModel>.from(currentTasks)..add(newTask);
+        emit(TaskLoaded(_sortTasks(updatedList)));
       } else {
         fetchTasks();
       }
@@ -99,7 +110,7 @@ class TaskCubit extends Cubit<TaskState> {
       );
       if (state is TaskLoaded) {
         final tasks = (state as TaskLoaded).tasks.map((t) => t.id == id ? updatedTask : t).toList();
-        emit(TaskLoaded(tasks));
+        emit(TaskLoaded(_sortTasks(tasks)));
       } else {
         fetchTasks();
       }
