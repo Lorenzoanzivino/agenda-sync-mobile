@@ -59,10 +59,11 @@ class TaskCubit extends Cubit<TaskState> {
     required DateTime dataFine,
     required String priorita,
     required bool tuttoIlGiorno,
+    required String colore,
     String? sharedCalendarId,
   }) async {
     try {
-      debugPrint("⏳ Avvio creazione task...");
+      debugPrint("⏳ Avvio creazione task con colore: $colore...");
       final newTask = await _taskService.createTask(
         titolo: titolo,
         descrizione: descrizione,
@@ -71,6 +72,7 @@ class TaskCubit extends Cubit<TaskState> {
         priorita: priorita,
         tuttoIlGiorno: tuttoIlGiorno,
         sharedCalendarId: sharedCalendarId,
+        colore: colore,
       );
       debugPrint("✅ Task creato con successo nel Cubit: ${newTask.id}");
 
@@ -95,6 +97,7 @@ class TaskCubit extends Cubit<TaskState> {
     required DateTime dataFine,
     required String priorita,
     required bool tuttoIlGiorno,
+    required String colore,
     String? sharedCalendarId,
   }) async {
     try {
@@ -107,6 +110,7 @@ class TaskCubit extends Cubit<TaskState> {
         priorita: priorita,
         tuttoIlGiorno: tuttoIlGiorno,
         sharedCalendarId: sharedCalendarId,
+        colore: colore,
       );
       if (state is TaskLoaded) {
         final tasks = (state as TaskLoaded).tasks.map((t) => t.id == id ? updatedTask : t).toList();
@@ -126,12 +130,29 @@ class TaskCubit extends Cubit<TaskState> {
       await _taskService.deleteTask(id);
       if (state is TaskLoaded) {
         final tasks = (state as TaskLoaded).tasks.where((t) => t.id != id).toList();
-        emit(TaskLoaded(tasks));
+        emit(TaskLoaded(_sortTasks(tasks)));
       } else {
         fetchTasks();
       }
     } catch (e, stacktrace) {
       debugPrint("❌ CRASH IN deleteTask: $e");
+      debugPrint("$stacktrace");
+      fetchTasks();
+    }
+  }
+
+  Future<void> bulkDeleteTasks(List<String> ids) async {
+    try {
+      debugPrint("⏳ Cancellazione di massa per gli ID: $ids");
+      await _taskService.bulkDeleteTasks(ids);
+      if (state is TaskLoaded) {
+        final remainingTasks = (state as TaskLoaded).tasks.where((t) => !ids.contains(t.id)).toList();
+        emit(TaskLoaded(_sortTasks(remainingTasks)));
+      } else {
+        fetchTasks();
+      }
+    } catch (e, stacktrace) {
+      debugPrint("❌ CRASH IN bulkDeleteTasks: $e");
       debugPrint("$stacktrace");
       fetchTasks();
     }

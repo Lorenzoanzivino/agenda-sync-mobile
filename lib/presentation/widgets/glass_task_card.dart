@@ -4,9 +4,12 @@ import 'package:flutter/material.dart';
 class GlassTaskCard extends StatelessWidget {
   final String title;
   final String description;
-  final String colorHex; // Riceve la stringa esadecimale (es. #06B6D4)
+  final String colorHex;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
   final bool isShared;
+  final bool isSelectedMode;
+  final bool isSelected;
 
   const GlassTaskCard({
     super.key,
@@ -14,7 +17,10 @@ class GlassTaskCard extends StatelessWidget {
     required this.description,
     required this.colorHex,
     this.onTap,
+    this.onLongPress,
     this.isShared = false,
+    this.isSelectedMode = false,
+    this.isSelected = false,
   });
 
   Color _parseColor(String hexStr) {
@@ -32,12 +38,18 @@ class GlassTaskCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      onLongPress: onLongPress,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 2),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 20, offset: const Offset(0, 10)),
+            BoxShadow(
+                color: isSelected ? taskColor.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.25),
+                blurRadius: isSelected ? 25 : 20,
+                offset: const Offset(0, 10)
+            ),
           ],
         ),
         child: ClipRRect(
@@ -47,27 +59,51 @@ class GlassTaskCard extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                // Usa il colore specifico del task sfumato al 14% di opacità per lo sfondo glass
-                color: taskColor.withValues(alpha: 0.14),
+                color: isSelected
+                    ? taskColor.withValues(alpha: 0.25)
+                    : taskColor.withValues(alpha: 0.14),
                 borderRadius: BorderRadius.circular(24),
-                // Il bordo sinistro o perimetrale prende la tinta accesa del task
                 border: Border.all(
-                    color: taskColor.withValues(alpha: 0.6),
-                    width: isShared ? 2.0 : 1.5
+                    color: isSelected
+                        ? Colors.white
+                        : (isShared ? taskColor.withValues(alpha: 0.6) : taskColor.withValues(alpha: 0.2)),
+                    width: isSelected ? 2.5 : (isShared ? 2.0 : 1.5)
                 ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(child: Text(title, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold))),
-                      Icon(isShared ? Icons.people_alt : Icons.circle, color: taskColor, size: 18),
-                    ],
+                  if (isSelectedMode) ...[
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      margin: const EdgeInsets.only(right: 15),
+                      width: 24, height: 24,
+                      decoration: BoxDecoration(
+                        color: isSelected ? Colors.white : Colors.transparent,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                      child: isSelected
+                          ? Icon(Icons.check, size: 16, color: taskColor)
+                          : null,
+                    ),
+                  ],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(child: Text(title, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold))),
+                            if (!isSelectedMode)
+                              Icon(isShared ? Icons.people_alt : Icons.circle, color: taskColor, size: 18),
+                          ],
+                        ),
+                        const SizedBox(height: 5),
+                        Text(description, style: const TextStyle(color: Colors.white70)),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 5),
-                  Text(description, style: const TextStyle(color: Colors.white70)),
                 ],
               ),
             ),
