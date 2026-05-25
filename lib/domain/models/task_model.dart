@@ -5,8 +5,9 @@ class TaskModel {
   final String dataInizio;
   final String dataFine;
   final bool tuttoIlGiorno;
+  final String colore; // Proprietà colore stringa obbligatoria
   final String userId;
-  final String? sharedCalendarId; // Aggiunto questo campo
+  final String? sharedCalendarId;
   final String? sharedCalendarNome;
   final String status;
   final String priorita;
@@ -18,8 +19,9 @@ class TaskModel {
     required this.dataInizio,
     required this.dataFine,
     required this.tuttoIlGiorno,
+    required this.colore,
     required this.userId,
-    this.sharedCalendarId, // Aggiunto qui
+    this.sharedCalendarId,
     this.sharedCalendarNome,
     required this.status,
     required this.priorita,
@@ -33,8 +35,9 @@ class TaskModel {
       dataInizio: json['dataInizio']?.toString() ?? DateTime.now().toIso8601String(),
       dataFine: json['dataFine']?.toString() ?? DateTime.now().toIso8601String(),
       tuttoIlGiorno: json['tuttoIlGiorno'] == true,
+      colore: json['colore']?.toString() ?? '#06B6D4', // Fallback esadecimale Ciano
       userId: json['userId']?.toString() ?? '',
-      sharedCalendarId: json['sharedCalendarId']?.toString(), // Mappatura JSON
+      sharedCalendarId: json['sharedCalendarId']?.toString(),
       sharedCalendarNome: json['sharedCalendarNome']?.toString(),
       status: json['status']?.toString() ?? 'TODO',
       priorita: json['priorita']?.toString() ?? 'LOW',

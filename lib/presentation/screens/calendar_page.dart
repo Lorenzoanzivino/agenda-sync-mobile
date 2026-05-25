@@ -273,6 +273,7 @@ class _CalendarPageState extends State<CalendarPage> {
                         return GlassTaskCard(
                           title: task.titolo,
                           description: task.descrizione,
+                          colorHex: task.colore, // Passa il colore specifico al widget card
                           isShared: task.sharedCalendarId != null,
                           onTap: () {
                             Navigator.pop(ctx);
@@ -535,23 +536,37 @@ class _CalendarPageState extends State<CalendarPage> {
                             if (events.isEmpty) return const SizedBox();
 
                             bool isDaySelected = isSameDay(date, _selectedDay) || isSameDay(date, DateTime.now());
-                            Color dotColor;
 
-                            if (isDaySelected) {
-                              dotColor = AppAtmospheres.privateBg;
-                              if (isSharedView && calendarId != null) {
-                                final idx = _cachedCalendars.indexWhere((c) => c.id == calendarId);
-                                if (idx != -1) dotColor = AppAtmospheres.getSharedBg(idx);
-                              }
-                            } else {
-                              dotColor = isSharedView ? Colors.cyanAccent : Colors.white;
-                            }
-
+                            // Visualizza fino a 4 pallini per giorno, ognuno colorato con il proprio colore specifico del task
                             return Positioned(
                               bottom: 8,
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
-                                children: List.generate(events.length > 4 ? 4 : events.length, (index) => Container(margin: const EdgeInsets.symmetric(horizontal: 1.5), width: 6, height: 6, decoration: BoxDecoration(shape: BoxShape.circle, color: dotColor))),
+                                children: List.generate(events.length > 4 ? 4 : events.length, (index) {
+                                  final task = events[index];
+                                  Color dotColor;
+
+                                  if (isDaySelected) {
+                                    dotColor = AppAtmospheres.privateBg;
+                                    if (isSharedView && calendarId != null) {
+                                      final idx = _cachedCalendars.indexWhere((c) => c.id == calendarId);
+                                      if (idx != -1) dotColor = AppAtmospheres.getSharedBg(idx);
+                                    }
+                                  } else {
+                                    try {
+                                      final cleaned = task.colore.replaceAll('#', '');
+                                      dotColor = Color(int.parse('FF$cleaned', radix: 16));
+                                    } catch (_) {
+                                      dotColor = isSharedView ? Colors.cyanAccent : Colors.white;
+                                    }
+                                  }
+
+                                  return Container(
+                                      margin: const EdgeInsets.symmetric(horizontal: 1.5),
+                                      width: 6, height: 6,
+                                      decoration: BoxDecoration(shape: BoxShape.circle, color: dotColor)
+                                  );
+                                }),
                               ),
                             );
                           },
