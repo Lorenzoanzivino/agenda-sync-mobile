@@ -1,44 +1,52 @@
 import 'package:flutter/material.dart';
 
 class AppAtmospheres {
-  // Privato (Viola Melanzana profondo)
-  static const Color privateBg = Color(0xFF2A1B38);
+  // Palette Autenticazione Dedicata (Neon Ciber-Cyan/Deep Ocean)
+  static const Color authBg = Color(0xFF0F172A);
+  static const List<Color> authCircles = [
+    Color(0xFF0EA5E9),
+    Color(0xFF2563EB),
+    Color(0xFF1D4ED8)
+  ];
+
+  // Privato (Viola Elettrico Acceso)
+  static const Color privateBg = Color(0xFF2E0854);
   static const List<Color> privateCircles = [
-    Color(0xFF3B264D),
-    Color(0xFF4C3363),
-    Color(0xFF5E407A)
+    Color(0xFF7B2CBF),
+    Color(0xFF9D4EDD),
+    Color(0xFFC77DFF)
   ];
 
-  // Condiviso 1 (Verde Petrolio scuro)
-  static const Color sharedBg = Color(0xFF003B36);
+  // Condiviso 1 (Verde Smeraldo Petrolio Brillante)
+  static const Color sharedBg = Color(0xFF004B49);
   static const List<Color> sharedCircles = [
-    Color(0xFF00524B),
-    Color(0xFF006B62),
-    Color(0xFF008579)
+    Color(0xFF008B8B),
+    Color(0xFF20B2AA),
+    Color(0xFF00FFFF)
   ];
 
-  // Condiviso 2 (Rosso Mattone scuro / Ruggine spento)
-  static const Color sharedBg2 = Color(0xFF3E1C1A);
+  // Condiviso 2 (Rosso Corallo Vivo / Fuoco)
+  static const Color sharedBg2 = Color(0xFF5A0E1A);
   static const List<Color> sharedCircles2 = [
-    Color(0xFF542825),
-    Color(0xFF6E3632),
-    Color(0xFF8B4540)
+    Color(0xFF9B1C31),
+    Color(0xFFD90429),
+    Color(0xFFEF233C)
   ];
 
-  // Condiviso 3 (Blu Notte profondo)
-  static const Color sharedBg3 = Color(0xFF162032);
+  // Condiviso 3 (Cobalto Notturno Neon)
+  static const Color sharedBg3 = Color(0xFF0B2545);
   static const List<Color> sharedCircles3 = [
-    Color(0xFF21304A),
-    Color(0xFF2D4063),
-    Color(0xFF39527C)
+    Color(0xFF134074),
+    Color(0xFF8DA9C4),
+    Color(0xFFEEF4F8)
   ];
 
-  // Condiviso 4 (Verde Muschio scuro)
-  static const Color sharedBg4 = Color(0xFF203324);
+  // Condiviso 4 (Verde Lime Acido / Muschio Brillante)
+  static const Color sharedBg4 = Color(0xFF132A13);
   static const List<Color> sharedCircles4 = [
-    Color(0xFF2C4732),
-    Color(0xFF3A5C41),
-    Color(0xFF497352)
+    Color(0xFF31572C),
+    Color(0xFF4F772D),
+    Color(0xFF90A955)
   ];
 
   static Color getSharedBg(int index) {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../core/constants/app_strings.dart';
 import '../viewmodels/task_cubit.dart';
 import 'glass_task_card.dart';
 import 'task_modals.dart';
@@ -44,7 +45,7 @@ class DailyDashboardView extends StatelessWidget {
                 children: [
                   const Icon(Icons.people_outline, color: Colors.white24, size: 64),
                   const SizedBox(height: 16),
-                  const Text("Non hai ancora calendari condivisi.", style: TextStyle(color: Colors.white70, fontSize: 16)),
+                  const Text(AppStrings.emptySharedMessage, style: TextStyle(color: Colors.white70, fontSize: 16)),
                   const SizedBox(height: 20),
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
@@ -54,7 +55,7 @@ class DailyDashboardView extends StatelessWidget {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15), side: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
                     ),
                     icon: const Icon(Icons.add_link, color: Colors.white),
-                    label: const Text('Crea o Unisciti', style: TextStyle(color: Colors.white)),
+                    label: const Text(AppStrings.btnCreaUnisciti, style: TextStyle(color: Colors.white)),
                     onPressed: () => showCalendarManagementModal(context),
                   )
                 ],
@@ -67,19 +68,14 @@ class DailyDashboardView extends StatelessWidget {
                 } else if (state is TaskError) {
                   return Center(child: Text(state.message, style: const TextStyle(color: Colors.redAccent)));
                 } else if (state is TaskLoaded) {
-
                   final now = DateTime.now();
-                  // FIX: Conversione a UTC per uniformità con il calendario
                   final targetDayUtc = DateTime.utc(now.year, now.month, now.day);
 
                   final filteredTasks = state.tasks.where((task) {
                     final parsedDate = DateTime.tryParse(task.dataInizio) ?? now;
-                    // FIX: Conversione a UTC per uniformità con il calendario
                     final taskDayUtc = DateTime.utc(parsedDate.year, parsedDate.month, parsedDate.day);
 
                     final isSameDay = taskDayUtc == targetDayUtc;
-
-                    // FIX: Controllo basato sull'ID invece che sul nome
                     final isTaskShared = task.sharedCalendarId != null;
                     final matchesType = isSharedView ? isTaskShared : !isTaskShared;
                     final matchesCalendar = !isSharedView || task.sharedCalendarId == calendarId;
@@ -102,7 +98,7 @@ class DailyDashboardView extends StatelessWidget {
                         children: [
                           Icon(Icons.done_all, color: Colors.white24, size: 64),
                           SizedBox(height: 16),
-                          Text("Nessun task per oggi.", style: TextStyle(color: Colors.white70, fontSize: 16)),
+                          Text(AppStrings.nessunTaskOggi, style: TextStyle(color: Colors.white70, fontSize: 16)),
                         ],
                       ),
                     );
@@ -116,7 +112,6 @@ class DailyDashboardView extends StatelessWidget {
                       return GlassTaskCard(
                         title: task.titolo,
                         description: task.descrizione,
-                        // FIX: Controllo basato sull'ID
                         isShared: task.sharedCalendarId != null,
                         onTap: () => showTaskDetailsModal(context, context.read<TaskCubit>(), task),
                       );

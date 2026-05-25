@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../core/constants/colors.dart';
+import '../../core/constants/app_strings.dart';
 import '../viewmodels/auth_cubit.dart';
 import '../viewmodels/auth_state.dart';
 import 'home_page.dart';
@@ -21,7 +22,6 @@ class _LoginPageState extends State<LoginPage> {
   final _nomeController = TextEditingController();
   final _dataNascitaController = TextEditingController();
 
-  // FIX: Aggiunta parametro obbligatorio per stabilità su Android
   final _storage = const FlutterSecureStorage(
     aOptions: AndroidOptions(
       encryptedSharedPreferences: true,
@@ -59,8 +59,8 @@ class _LoginPageState extends State<LoginPage> {
           data: ThemeData.dark().copyWith(
             colorScheme: const ColorScheme.dark(
               primary: Colors.white,
-              onPrimary: AppAtmospheres.privateBg,
-              surface: AppAtmospheres.privateBg,
+              onPrimary: AppAtmospheres.authBg,
+              surface: AppAtmospheres.authBg,
               onSurface: Colors.white,
             ),
           ),
@@ -75,13 +75,11 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  // FIX: Reso asincrono per attendere il salvataggio PRIMA del blocco di rete
   Future<void> _submitForm(BuildContext context) async {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
     if (_isLogin) {
-      // Salvataggio sicuro anticipato
       await _storage.write(key: 'saved_email', value: email);
       await _storage.write(key: 'saved_password', value: password);
 
@@ -94,12 +92,11 @@ class _LoginPageState extends State<LoginPage> {
 
       if (nome.isEmpty || dataNascita.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Compila tutti i campi'), backgroundColor: Colors.redAccent),
+          const SnackBar(content: Text(AppStrings.errCompilaTuttiCampi), backgroundColor: Colors.redAccent),
         );
         return;
       }
 
-      // Salvataggio sicuro anticipato
       await _storage.write(key: 'saved_email', value: email);
       await _storage.write(key: 'saved_password', value: password);
 
@@ -112,11 +109,11 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppAtmospheres.privateBg,
+      backgroundColor: AppAtmospheres.authBg,
       body: Stack(
         children: [
-          Positioned(top: -50, right: -50, child: _buildCircle(AppAtmospheres.privateCircles[0], 300)),
-          Positioned(bottom: -100, left: -50, child: _buildCircle(AppAtmospheres.privateCircles[1], 250)),
+          Positioned(top: -50, right: -50, child: _buildCircle(AppAtmospheres.authCircles[0], 300)),
+          Positioned(bottom: -100, left: -50, child: _buildCircle(AppAtmospheres.authCircles[1], 250)),
 
           Center(
             child: SingleChildScrollView(
@@ -128,7 +125,6 @@ class _LoginPageState extends State<LoginPage> {
                       SnackBar(content: Text(state.message), backgroundColor: Colors.redAccent),
                     );
                   } else if (state is AuthAuthenticated) {
-                    // FIX: Rimossa la logica di salvataggio storage da qui
                     Navigator.of(context).pushReplacement(
                       MaterialPageRoute(builder: (_) => const HomePage()),
                     );
@@ -160,18 +156,18 @@ class _LoginPageState extends State<LoginPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(_isLogin ? 'AgendaSync' : 'Registrati', style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
+              Text(_isLogin ? AppStrings.appName : AppStrings.registerTitle, style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
               const SizedBox(height: 30),
 
               if (!_isLogin) ...[
-                _buildTextField(_nomeController, 'Nome', Icons.person, false),
+                _buildTextField(_nomeController, AppStrings.labelNome, Icons.person, false),
                 const SizedBox(height: 20),
               ],
 
-              _buildTextField(_emailController, 'Email', Icons.email, false),
+              _buildTextField(_emailController, AppStrings.labelEmail, Icons.email, false),
               const SizedBox(height: 20),
 
-              _buildTextField(_passwordController, 'Password', Icons.lock, true),
+              _buildTextField(_passwordController, AppStrings.labelPassword, Icons.lock, true),
               const SizedBox(height: 20),
 
               if (!_isLogin) ...[
@@ -192,7 +188,7 @@ class _LoginPageState extends State<LoginPage> {
                   onPressed: state is AuthLoading ? null : () => _submitForm(context),
                   child: state is AuthLoading
                       ? const CircularProgressIndicator()
-                      : Text(_isLogin ? 'ACCEDI' : 'REGISTRATI', style: const TextStyle(color: AppAtmospheres.privateBg, fontWeight: FontWeight.bold, fontSize: 16)),
+                      : Text(_isLogin ? AppStrings.btnAccedi : AppStrings.btnRegistrati, style: const TextStyle(color: AppAtmospheres.authBg, fontWeight: FontWeight.bold, fontSize: 16)),
                 ),
               ),
               const SizedBox(height: 20),
@@ -203,7 +199,7 @@ class _LoginPageState extends State<LoginPage> {
                   });
                 },
                 child: Text(
-                  _isLogin ? 'Non hai un account? Registrati' : 'Hai già un account? Accedi',
+                  _isLogin ? AppStrings.toRegister : AppStrings.toLogin,
                   style: const TextStyle(color: Colors.white70),
                 ),
               )
@@ -237,7 +233,7 @@ class _LoginPageState extends State<LoginPage> {
       onTap: () => _selectDate(context),
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
-        hintText: 'Data di Nascita (YYYY-MM-DD)',
+        hintText: AppStrings.labelDataNascitaHint,
         hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
         prefixIcon: const Icon(Icons.calendar_today, color: Colors.white70),
         filled: true,
