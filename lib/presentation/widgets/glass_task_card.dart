@@ -100,7 +100,13 @@ class GlassTaskCard extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 5),
-                        Text(description, style: const TextStyle(color: Colors.white70)),
+                        // Fix Punto 4: troncamento della descrizione ad una riga con i puntini (...)
+                        Text(
+                          description,
+                          style: const TextStyle(color: Colors.white70),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ],
                     ),
                   ),

@@ -117,10 +117,23 @@ class _CalendarManagementModalState extends State<_CalendarManagementModal> {
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
                       onPressed: state is CalendarLoading ? null : () {
-                        if (_isCreating && _nomeCtrl.text.isNotEmpty) {
-                          context.read<CalendarCubit>().createCalendar(_nomeCtrl.text);
-                        } else if (!_isCreating && _codeCtrl.text.isNotEmpty) {
-                          context.read<CalendarCubit>().joinCalendar(_codeCtrl.text);
+                        // Fix Punto 12: Controllo e Banner per campi vuoti
+                        if (_isCreating) {
+                          if (_nomeCtrl.text.trim().isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Il campo obbligatorio non può essere vuoto.'), backgroundColor: Colors.redAccent),
+                            );
+                            return;
+                          }
+                          context.read<CalendarCubit>().createCalendar(_nomeCtrl.text.trim());
+                        } else {
+                          if (_codeCtrl.text.trim().isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Il campo obbligatorio non può essere vuoto.'), backgroundColor: Colors.redAccent),
+                            );
+                            return;
+                          }
+                          context.read<CalendarCubit>().joinCalendar(_codeCtrl.text.trim());
                         }
                       },
                       child: state is CalendarLoading
