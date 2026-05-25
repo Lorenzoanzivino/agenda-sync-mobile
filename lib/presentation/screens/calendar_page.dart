@@ -75,6 +75,13 @@ class _CalendarPageState extends State<CalendarPage> {
   }
 
   void _showSettingsModal() {
+    // Genera la lista di orari (00:00, 00:30, 01:00 ... 23:30)
+    final List<String> briefingTimes = List.generate(48, (index) {
+      final int hour = index ~/ 2;
+      final String minute = (index % 2 == 0) ? "00" : "30";
+      return "${hour.toString().padLeft(2, '0')}:$minute";
+    });
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -106,7 +113,7 @@ class _CalendarPageState extends State<CalendarPage> {
                       style: const TextStyle(color: Colors.white, fontSize: 18),
                       icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
                       isExpanded: true,
-                      items: ["07:00", "08:00", "09:00", "10:00"].map((String time) {
+                      items: briefingTimes.map((String time) {
                         return DropdownMenuItem<String>(value: time, child: Text(time));
                       }).toList(),
                       onChanged: (val) {
@@ -480,26 +487,23 @@ class _CalendarPageState extends State<CalendarPage> {
                             if (events.isEmpty) return const SizedBox();
 
                             return Positioned(
-                              bottom: 8,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: List.generate(events.length > 4 ? 4 : events.length, (index) {
-                                  final task = events[index];
-                                  Color dotColor;
-
-                                  try {
-                                    final cleaned = task.colore.replaceAll('#', '');
-                                    dotColor = Color(int.parse('FF$cleaned', radix: 16));
-                                  } catch (_) {
-                                    dotColor = isSharedView ? Colors.cyanAccent : Colors.white;
-                                  }
-
-                                  return Container(
-                                      margin: const EdgeInsets.symmetric(horizontal: 1.5),
-                                      width: 6, height: 6,
-                                      decoration: BoxDecoration(shape: BoxShape.circle, color: dotColor)
-                                  );
-                                }),
+                              bottom: 6,
+                              child: Container(
+                                width: 18,
+                                height: 18,
+                                decoration: BoxDecoration(
+                                  color: isSharedView ? Colors.cyanAccent : Colors.redAccent,
+                                  shape: BoxShape.circle,
+                                ),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  '${events.length}',
+                                  style: TextStyle(
+                                    color: isSharedView ? Colors.black : Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                             );
                           },
