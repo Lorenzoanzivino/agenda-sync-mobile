@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 class GlassTaskCard extends StatelessWidget {
   final String title;
   final String description;
+  final String colorHex; // Riceve la stringa esadecimale (es. #06B6D4)
   final VoidCallback? onTap;
   final bool isShared;
 
@@ -11,12 +12,24 @@ class GlassTaskCard extends StatelessWidget {
     super.key,
     required this.title,
     required this.description,
+    required this.colorHex,
     this.onTap,
     this.isShared = false,
   });
 
+  Color _parseColor(String hexStr) {
+    try {
+      final cleaned = hexStr.replaceAll('#', '');
+      return Color(int.parse('FF$cleaned', radix: 16));
+    } catch (_) {
+      return Colors.cyanAccent;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final taskColor = _parseColor(colorHex);
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -34,11 +47,12 @@ class GlassTaskCard extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.12),
+                // Usa il colore specifico del task sfumato al 14% di opacità per lo sfondo glass
+                color: taskColor.withValues(alpha: 0.14),
                 borderRadius: BorderRadius.circular(24),
-                // Se è condiviso, mettiamo un bordo visibile colorato (es. Ciano) per indicare collaborazione
+                // Il bordo sinistro o perimetrale prende la tinta accesa del task
                 border: Border.all(
-                    color: isShared ? Colors.cyanAccent.withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.2),
+                    color: taskColor.withValues(alpha: 0.6),
                     width: isShared ? 2.0 : 1.5
                 ),
               ),
@@ -49,7 +63,7 @@ class GlassTaskCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(child: Text(title, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold))),
-                      if (isShared) const Icon(Icons.people_alt, color: Colors.cyanAccent, size: 18),
+                      Icon(isShared ? Icons.people_alt : Icons.circle, color: taskColor, size: 18),
                     ],
                   ),
                   const SizedBox(height: 5),

@@ -140,6 +140,17 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
   final List<String> _hours = List.generate(24, (index) => index.toString().padLeft(2, '0'));
   final List<String> _minutes = ['00', '15', '30', '45'];
 
+  // Palette Colori Disponibili Stile Google Calendar
+  final List<String> _colorsPalette = [
+    '#06B6D4', // Ciano
+    '#10B981', // Smeraldo
+    '#E11D48', // Lampone
+    '#F59E0B', // Ambra
+    '#6366F1', // Indaco
+    '#F97316', // Arancio Neon
+  ];
+
+  String _selectedColor = '#06B6D4';
   DateTime _selectedDate = DateTime.now();
   String _startHour = '09';
   String _startMinute = '00';
@@ -166,6 +177,7 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
       _descCtrl.text = t.descrizione;
       _isAllDay = t.tuttoIlGiorno;
       _priorita = t.priorita;
+      _selectedColor = t.colore;
       _selectedSharedCalendarId = t.sharedCalendarId;
 
       final start = DateTime.tryParse(t.dataInizio)?.toLocal() ?? DateTime.now();
@@ -225,6 +237,7 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
         priorita: _priorita,
         tuttoIlGiorno: _isAllDay,
         sharedCalendarId: _selectedSharedCalendarId,
+        colore: _selectedColor, // Passa il colore esadecimale scelto
       );
     } else {
       context.read<TaskCubit>().updateTask(
@@ -236,6 +249,7 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
         priorita: _priorita,
         tuttoIlGiorno: _isAllDay,
         sharedCalendarId: _selectedSharedCalendarId,
+        colore: _selectedColor, // Passa il colore esadecimale scelto
       );
     }
     Navigator.of(context).pop();
@@ -304,6 +318,38 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
                     decoration: InputDecoration(hintText: AppStrings.formTitoloHint, hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)), filled: true, fillColor: Colors.white.withValues(alpha: 0.1), border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none)),
                   ),
                   const SizedBox(height: 15),
+
+                  // Selettore Colore del Task
+                  const Text("Scegli Colore Task:", style: TextStyle(color: Colors.white70, fontSize: 16, fontWeight: FontWeight.w500)),
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: _colorsPalette.map((hexStr) {
+                      final cleaned = hexStr.replaceAll('#', '');
+                      final colorObj = Color(int.parse('FF$cleaned', radix: 16));
+                      final isSelected = _selectedColor == hexStr;
+
+                      return GestureDetector(
+                        onTap: () => setState(() => _selectedColor = hexStr),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          width: 42, height: 42,
+                          decoration: BoxDecoration(
+                            color: colorObj,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isSelected ? Colors.white : Colors.transparent,
+                              width: 3,
+                            ),
+                            boxShadow: isSelected ? [BoxShadow(color: colorObj.withValues(alpha: 0.6), blurRadius: 10, spreadRadius: 2)] : [],
+                          ),
+                          child: isSelected ? const Icon(Icons.check, color: Colors.white, size: 20) : null,
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 20),
+
                   Theme(
                     data: ThemeData(unselectedWidgetColor: Colors.white54),
                     child: CheckboxListTile(
