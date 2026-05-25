@@ -8,7 +8,7 @@ import 'glass_task_card.dart';
 import 'task_modals.dart';
 import 'calendar_management_modal.dart';
 
-class DailyDashboardView extends StatelessWidget {
+class DailyDashboardView extends StatefulWidget {
   final String title;
   final bool isSharedView;
   final String? calendarId;
@@ -22,11 +22,37 @@ class DailyDashboardView extends StatelessWidget {
     this.inviteCode,
   });
 
+  @override
+  State<DailyDashboardView> createState() => _DailyDashboardViewState();
+}
+
+class _DailyDashboardViewState extends State<DailyDashboardView> {
+  final List<String> _selectedTaskIds = [];
+  bool _isSelectionMode = false;
+
   String _getFormattedDateLabel() {
     final now = DateTime.now();
     final giorni = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
     final mesi = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
     return "${giorni[now.weekday - 1]} ${now.day} ${mesi[now.month - 1]} ${now.year}";
+  }
+
+  void _toggleSelection(String taskId) {
+    setState(() {
+      if (_selectedTaskIds.contains(taskId)) {
+        _selectedTaskIds.remove(taskId);
+        if (_selectedTaskIds.isEmpty) _isSelectionMode = false;
+      } else {
+        _selectedTaskIds.add(taskId);
+      }
+    });
+  }
+
+  void _exitSelectionMode() {
+    setState(() {
+      _selectedTaskIds.clear();
+      _isSelectionMode = false;
+    });
   }
 
   void _showOtpInfoDialog(BuildContext context, String calendarName, String code) {
@@ -72,16 +98,30 @@ class DailyDashboardView extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 20),
-          Text(_getFormattedDateLabel(), style: const TextStyle(color: Colors.white70, fontSize: 18, fontWeight: FontWeight.w500)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(_getFormattedDateLabel(), style: const TextStyle(color: Colors.white70, fontSize: 18, fontWeight: FontWeight.w500)),
+              if (_isSelectionMode)
+                TextButton.icon(
+                  onPressed: () {
+                    context.read<TaskCubit>().bulkDeleteTasks(_selectedTaskIds);
+                    _exitSelectionMode();
+                  },
+                  icon: const Icon(Icons.delete_sweep, color: Colors.redAccent),
+                  label: Text("Elimina (${_selectedTaskIds.length})", style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                ),
+            ],
+          ),
           const SizedBox(height: 5),
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(title, style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
-              if (isSharedView && calendarId != null && inviteCode != null) ...[
+              Text(widget.title, style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
+              if (widget.isSharedView && widget.calendarId != null && widget.inviteCode != null) ...[
                 const SizedBox(width: 8),
                 GestureDetector(
-                  onTap: () => _showOtpInfoDialog(context, title, inviteCode!),
+                  onTap: () => _showOtpInfoDialog(context, widget.title, widget.inviteCode!),
                   child: Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
@@ -96,7 +136,7 @@ class DailyDashboardView extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           Expanded(
-            child: isSharedView && calendarId == null
+            child: widget.isSharedView && widget.calendarId == null
                 ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -135,8 +175,8 @@ class DailyDashboardView extends StatelessWidget {
 
                     final isSameDay = taskDayUtc == targetDayUtc;
                     final isTaskShared = task.sharedCalendarId != null;
-                    final matchesType = isSharedView ? isTaskShared : !isTaskShared;
-                    final matchesCalendar = !isSharedView || task.sharedCalendarId == calendarId;
+                    final matchesType = widget.isSharedView ? isTaskShared : !isTaskShared;
+                    final matchesCalendar = !widget.isSharedView || task.sharedCalendarId == widget.calendarId;
 
                     return isSameDay && matchesType && matchesCalendar;
                   }).toList();
@@ -145,7 +185,7 @@ class DailyDashboardView extends StatelessWidget {
                     if (a.tuttoIlGiorno && !b.tuttoIlGiorno) return -1;
                     if (!a.tuttoIlGiorno && b.tuttoIlGiorno) return 1;
                     final dateA = DateTime.tryParse(a.dataInizio) ?? DateTime.now();
-                    final dateB = DateTime.tryParse(b.dataInizio) ?? DateTime.now();
+                    final dateB = DateTime.tryParse(b.dataFine) ?? DateTime.now();
                     return dateA.compareTo(dateB);
                   });
 
@@ -167,11 +207,28 @@ class DailyDashboardView extends StatelessWidget {
                     itemCount: filteredTasks.length,
                     itemBuilder: (context, index) {
                       final task = filteredTasks[index];
+                      final isSelected = _selectedTaskIds.contains(task.id);
+
                       return GlassTaskCard(
                         title: task.titolo,
                         description: task.descrizione,
+                        colorHex: task.colore,
                         isShared: task.sharedCalendarId != null,
-                        onTap: () => showTaskDetailsModal(context, context.read<TaskCubit>(), task),
+                        isSelectedMode: _isSelectionMode,
+                        isSelected: isSelected,
+                        onLongPress: () {
+                          setState(() {
+                            _isSelectionMode = true;
+                            _toggleSelection(task.id);
+                          });
+                        },
+                        onTap: () {
+                          if (_isSelectionMode) {
+                            _toggleSelection(task.id);
+                          } else {
+                            showTaskDetailsModal(context, context.read<TaskCubit>(), task);
+                          }
+                        },
                       );
                     },
                   );

@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import '../../core/network/api_client.dart';
 import '../../domain/models/task_model.dart';
 
@@ -21,6 +20,7 @@ class TaskService {
     required String descrizione,
     required DateTime dataInizio,
     required DateTime dataFine,
+    required String colore,
     String priorita = 'LOW',
     bool tuttoIlGiorno = false,
     String? sharedCalendarId,
@@ -31,6 +31,7 @@ class TaskService {
       "dataInizio": dataInizio.toIso8601String(),
       "dataFine": dataFine.toIso8601String(),
       "tuttoIlGiorno": tuttoIlGiorno,
+      "colore": colore,
       "priorita": priorita,
       "status": "TODO"
     };
@@ -39,21 +40,11 @@ class TaskService {
       payload["sharedCalendarId"] = sharedCalendarId;
     }
 
-    debugPrint("📤 Inviando POST a /tasks. Payload: $payload");
     final response = await _apiClient.post('/tasks', payload);
-    debugPrint("📥 Risposta POST /tasks: Status ${response.statusCode}");
-    debugPrint("📦 Body Risposta: ${response.body}");
-
     if (response.statusCode == 201 || response.statusCode == 200) {
-      try {
-        final jsonResponse = jsonDecode(response.body);
-        return TaskModel.fromJson(jsonResponse);
-      } catch (parseError) {
-        debugPrint("❌ ERRORE DI PARSING JSON NEL SERVICE: $parseError");
-        rethrow;
-      }
+      return TaskModel.fromJson(jsonDecode(response.body));
     } else {
-      throw Exception('Errore creazione task: ${response.statusCode} - ${response.body}');
+      throw Exception('Errore creazione task: ${response.statusCode}');
     }
   }
 
@@ -62,6 +53,7 @@ class TaskService {
     required String descrizione,
     required DateTime dataInizio,
     required DateTime dataFine,
+    required String colore,
     String priorita = 'LOW',
     bool tuttoIlGiorno = false,
     String? sharedCalendarId,
@@ -72,6 +64,7 @@ class TaskService {
       "dataInizio": dataInizio.toIso8601String(),
       "dataFine": dataFine.toIso8601String(),
       "tuttoIlGiorno": tuttoIlGiorno,
+      "colore": colore,
       "priorita": priorita,
       "status": "TODO"
     };
@@ -92,6 +85,17 @@ class TaskService {
     final response = await _apiClient.delete('/tasks/$id');
     if (response.statusCode != 200 && response.statusCode != 204) {
       throw Exception('Impossibile eliminare il task. Status: ${response.statusCode}');
+    }
+  }
+
+  Future<void> bulkDeleteTasks(List<String> ids) async {
+    final payload = <String, dynamic>{
+      "taskIds": ids
+    };
+
+    final response = await _apiClient.post('/tasks/bulk-delete', payload);
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw Exception('Errore cancellazione massiva. Status: ${response.statusCode}');
     }
   }
 }
