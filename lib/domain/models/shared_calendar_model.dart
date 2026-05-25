@@ -13,7 +13,7 @@ class SharedCalendarModel {
     return SharedCalendarModel(
       id: json['id']?.toString() ?? '',
       nome: json['nome']?.toString() ?? 'Calendario Condiviso',
-      inviteCode: json['inviteCode']?.toString(),
+      inviteCode: json['inviteCode']?.toString(), // Ora il JSON conterrà il valore
     );
   }
 }

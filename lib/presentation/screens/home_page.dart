@@ -1,6 +1,5 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/app_strings.dart';
@@ -157,41 +156,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _showOtpInfoDialog(String calendarName, String calendarId) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppAtmospheres.sharedBg,
-        title: const Text(AppStrings.dialogVisualizzaOtp, style: TextStyle(color: Colors.white)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("Nome: $calendarName", style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            const Text("Usa questo codice ID per far unire un altro utente:", style: TextStyle(color: Colors.white70)),
-            const SizedBox(height: 15),
-            SelectableText(calendarId, style: const TextStyle(color: Colors.cyanAccent, fontSize: 20, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: calendarId));
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(AppStrings.snackCopiato)));
-              Navigator.pop(ctx);
-            },
-            child: const Text(AppStrings.btnCopia, style: TextStyle(color: Colors.white)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text(AppStrings.btnChiudi, style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return BlocListener<AuthCubit, AuthState>(
@@ -249,17 +213,17 @@ class _HomePageState extends State<HomePage> {
                           itemCount: pageCount,
                           itemBuilder: (context, index) {
                             if (index == 0) {
-                              return const DailyDashboardView(title: AppStrings.dashboardPrivata, isSharedView: false, calendarId: null);
+                              return const DailyDashboardView(title: AppStrings.dashboardPrivata, isSharedView: false, calendarId: null, inviteCode: null);
                             } else {
                               if (_cachedCalendars.isEmpty) {
-                                return const DailyDashboardView(title: AppStrings.calendarioCondivisoDefault, isSharedView: true, calendarId: null);
+                                return const DailyDashboardView(title: AppStrings.calendarioCondivisoDefault, isSharedView: true, calendarId: null, inviteCode: null);
                               } else {
                                 int calendarIndex = index - 1;
                                 if (calendarIndex >= _cachedCalendars.length) {
                                   calendarIndex = _cachedCalendars.length - 1;
                                 }
                                 final calendar = _cachedCalendars[calendarIndex];
-                                return DailyDashboardView(title: calendar.nome, isSharedView: true, calendarId: calendar.id);
+                                return DailyDashboardView(title: calendar.nome, isSharedView: true, calendarId: calendar.id, inviteCode: calendar.inviteCode);
                               }
                             }
                           },
@@ -305,14 +269,6 @@ class _HomePageState extends State<HomePage> {
           Row(
             children: [
               if (isShared && currentCalendar != null) ...[
-                Container(
-                  decoration: const BoxDecoration(color: Colors.white24, shape: BoxShape.circle),
-                  child: IconButton(
-                    icon: const Icon(Icons.info_outline, color: Colors.white),
-                    onPressed: () => _showOtpInfoDialog(currentCalendar!.nome, currentCalendar.id),
-                  ),
-                ),
-                const SizedBox(width: 10),
                 Container(
                   decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
                   child: IconButton(
