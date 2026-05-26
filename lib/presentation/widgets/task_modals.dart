@@ -1,6 +1,8 @@
 import 'dart:ui';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../domain/models/task_model.dart';
@@ -92,7 +94,7 @@ class _TaskDetailsModal extends StatelessWidget {
                       child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(backgroundColor: Colors.white24, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
                         icon: const Icon(Icons.edit, color: Colors.white),
-                        label: const Text('Modifica', style: TextStyle(color: Colors.white)), // Fix Punto 6
+                        label: const Text('Modifica', style: TextStyle(color: Colors.white)),
                         onPressed: () {
                           Navigator.pop(context);
                           showTaskFormModal(context, context.read<TaskCubit>(), task: task, isShared: task.sharedCalendarId != null, forcedCalendarId: task.sharedCalendarId);
@@ -140,6 +142,11 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
   final List<String> _hours = List.generate(24, (index) => index.toString().padLeft(2, '0'));
   final List<String> _minutes = ['00', '15', '30', '45'];
 
+  final _storage = const FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
+  List<dynamic> _savedTemplates = [];
+
   final List<String> _colorsPalette = [
     '#06B6D4', '#10B981', '#E11D48', '#F59E0B', '#6366F1', '#F97316',
   ];
@@ -159,6 +166,8 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
   @override
   void initState() {
     super.initState();
+    _loadTemplates();
+
     bgColor = widget.isSharedContext ? AppAtmospheres.sharedBg : AppAtmospheres.privateBg;
     _selectedSharedCalendarId = widget.forcedCalendarId;
     if (widget.forcedDate != null) {
@@ -185,6 +194,135 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
     }
   }
 
+  Future<void> _loadTemplates() async {
+    String? templatesJson = await _storage.read(key: 'task_templates');
+    if (templatesJson != null) {
+      setState(() {
+        _savedTemplates = jsonDecode(templatesJson);
+      });
+    }
+  }
+
+  Future<void> _saveCurrentAsTemplate() async {
+    if (_titoloCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Inserisci almeno il titolo per salvare un modello.'), backgroundColor: Colors.redAccent),
+      );
+      return;
+    }
+
+    final newTemplate = {
+      'titolo': _titoloCtrl.text.trim(),
+      'descrizione': _descCtrl.text.trim(),
+      'colore': _selectedColor,
+      'tuttoIlGiorno': _isAllDay,
+      'startHour': _startHour,
+      'startMinute': _startMinute,
+      'endHour': _endHour,
+      'endMinute': _endMinute,
+    };
+
+    setState(() {
+      _savedTemplates.add(newTemplate);
+    });
+
+    await _storage.write(key: 'task_templates', value: jsonEncode(_savedTemplates));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Modello salvato con successo!'), backgroundColor: Colors.green),
+      );
+    }
+  }
+
+  void _applyTemplate(Map<String, dynamic> t) {
+    setState(() {
+      _titoloCtrl.text = t['titolo'] ?? '';
+      _descCtrl.text = t['descrizione'] ?? '';
+      _selectedColor = t['colore'] ?? '#06B6D4';
+      _isAllDay = t['tuttoIlGiorno'] ?? false;
+      _startHour = t['startHour'] ?? '09';
+      _startMinute = t['startMinute'] ?? '00';
+      _endHour = t['endHour'] ?? '10';
+      _endMinute = t['endMinute'] ?? '00';
+    });
+  }
+
+  void _showTemplatesModal() {
+    showModalBottomSheet(
+        context: context,
+        backgroundColor: Colors.transparent,
+        isScrollControlled: true,
+        builder: (ctx) => Container(
+            padding: const EdgeInsets.only(top: 20, left: 20, right: 20, bottom: 40),
+            decoration: BoxDecoration(
+              color: bgColor.withValues(alpha: 0.95),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.2), width: 1.5)),
+            ),
+            child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text("Modelli Salvati", style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 10),
+                  const Text("Seleziona un modello rapido per compilare automaticamente il task.", style: TextStyle(color: Colors.white70, fontSize: 14)),
+                  const SizedBox(height: 20),
+                  _savedTemplates.isEmpty
+                      ? const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 30),
+                    child: Center(child: Text("Nessun modello salvato.", style: TextStyle(color: Colors.white54))),
+                  )
+                      : Flexible(
+                      child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: _savedTemplates.length,
+                          itemBuilder: (context, i) {
+                            final t = _savedTemplates[i] as Map<String, dynamic>;
+
+                            Color taskColor = Colors.cyanAccent;
+                            try {
+                              final cleaned = (t['colore'] ?? '#06B6D4').replaceAll('#', '');
+                              taskColor = Color(int.parse('FF$cleaned', radix: 16));
+                            } catch (_) {}
+
+                            return Card(
+                              color: Colors.white.withValues(alpha: 0.1),
+                              elevation: 0,
+                              margin: const EdgeInsets.symmetric(vertical: 5),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                              child: ListTile(
+                                  leading: Container(width: 15, height: 15, decoration: BoxDecoration(color: taskColor, shape: BoxShape.circle)),
+                                  title: Text(t['titolo'] ?? '', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                  subtitle: Text(
+                                      t['tuttoIlGiorno'] == true ? "Tutto il giorno" : "${t['startHour']}:${t['startMinute']} - ${t['endHour']}:${t['endMinute']}",
+                                      style: const TextStyle(color: Colors.white70)
+                                  ),
+                                  trailing: IconButton(
+                                      icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                                      onPressed: () {
+                                        setState(() {
+                                          _savedTemplates.removeAt(i);
+                                        });
+                                        _storage.write(key: 'task_templates', value: jsonEncode(_savedTemplates));
+                                        Navigator.pop(ctx);
+                                        _showTemplatesModal();
+                                      }
+                                  ),
+                                  onTap: () {
+                                    _applyTemplate(t);
+                                    Navigator.pop(ctx);
+                                  }
+                              ),
+                            );
+                          }
+                      )
+                  )
+                ]
+            )
+        )
+    );
+  }
+
   String _snapMinute(int min) {
     if (min < 15) return '00';
     if (min < 30) return '15';
@@ -209,7 +347,6 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
   }
 
   void _submit() {
-    // Fix Punto 12: Banner errore campo vuoto
     if (_titoloCtrl.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Il campo obbligatorio non può essere vuoto.'), backgroundColor: Colors.redAccent),
@@ -285,6 +422,18 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         title: Text(screenTitle, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.bookmark_add_outlined),
+            tooltip: 'Salva come modello',
+            onPressed: _saveCurrentAsTemplate,
+          ),
+          IconButton(
+            icon: const Icon(Icons.library_books),
+            tooltip: 'Carica modello',
+            onPressed: _showTemplatesModal,
+          ),
+        ],
       ),
       body: Stack(
         children: [

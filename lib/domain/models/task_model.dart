@@ -5,7 +5,7 @@ class TaskModel {
   final String dataInizio;
   final String dataFine;
   final bool tuttoIlGiorno;
-  final String colore; // Proprietà colore stringa obbligatoria
+  final String colore;
   final String userId;
   final String? sharedCalendarId;
   final String? sharedCalendarNome;
@@ -35,12 +35,29 @@ class TaskModel {
       dataInizio: json['dataInizio']?.toString() ?? DateTime.now().toIso8601String(),
       dataFine: json['dataFine']?.toString() ?? DateTime.now().toIso8601String(),
       tuttoIlGiorno: json['tuttoIlGiorno'] == true,
-      colore: json['colore']?.toString() ?? '#06B6D4', // Fallback esadecimale Ciano
+      colore: json['colore']?.toString() ?? '#06B6D4',
       userId: json['userId']?.toString() ?? '',
       sharedCalendarId: json['sharedCalendarId']?.toString(),
       sharedCalendarNome: json['sharedCalendarNome']?.toString(),
       status: json['status']?.toString() ?? 'TODO',
       priorita: json['priorita']?.toString() ?? 'LOW',
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'titolo': titolo,
+      'descrizione': descrizione,
+      'dataInizio': dataInizio,
+      'dataFine': dataFine,
+      'tuttoIlGiorno': tuttoIlGiorno,
+      'colore': colore,
+      'userId': userId,
+      'sharedCalendarId': sharedCalendarId,
+      'sharedCalendarNome': sharedCalendarNome,
+      'status': status,
+      'priorita': priorita,
+    };
   }
 }
