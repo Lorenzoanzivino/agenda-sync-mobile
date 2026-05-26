@@ -1,14 +1,14 @@
-// lib/data/services/notification_service.dart
 import 'dart:async';
 import 'dart:io' show Platform;
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/foundation.dart';
 
 class NotificationService {
-  // Punto 11: Stream per notificare alla UI l'arrivo di un messaggio in tempo reale
   static final StreamController<void> onNotificationReceived = StreamController.broadcast();
 
-  FirebaseMessaging get _firebaseMessaging => FirebaseMessaging.instance;
+  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+  final FlutterLocalNotificationsPlugin _localNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
   bool get _isFirebaseSupported {
     if (kIsWeb) return true;
@@ -22,6 +22,7 @@ class NotificationService {
     }
 
     try {
+      // Richiesta permessi nativi
       NotificationSettings settings = await _firebaseMessaging.requestPermission(
         alert: true,
         badge: true,
@@ -34,11 +35,59 @@ class NotificationService {
         debugPrint('⚠️ Permessi notifiche negati.');
       }
 
+      // Configurazione canale di notifica per Android (Obbligatorio per Android 8.0+)
+      const AndroidInitializationSettings androidInitSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+      const InitializationSettings initSettings = InitializationSettings(android: androidInitSettings);
+      await _localNotificationsPlugin.initialize(initSettings);
+
+      const AndroidNotificationChannel channel = AndroidNotificationChannel(
+        'high_importance_channel',
+        'Notifiche Importanti',
+        description: 'Canale utilizzato per notifiche push immediate (es. nuovi task).',
+        importance: Importance.max,
+      );
+
+      if (Platform.isAndroid) {
+        await _localNotificationsPlugin
+            .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+            ?.createNotificationChannel(channel);
+      }
+
+      // Consenti a iOS di mostrare notifiche in Foreground automaticamente
+      await _firebaseMessaging.setForegroundNotificationPresentationOptions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+
+      // Listener per l'App in Foreground (Schermo acceso sull'app)
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
         debugPrint('📥 Ricevuta notifica in Foreground: ${message.notification?.title}');
 
-        // Punto 8 e 11: Le notifiche push immediate di FCM triggerano il refresh Real-Time
-        // (I briefing schedulati andranno invece gestiti tramite notifiche locali FlutterLocalNotificationsPlugin)
+        RemoteNotification? notification = message.notification;
+        AndroidNotification? android = message.notification?.android;
+
+        // Se la notifica contiene testo, forza il banner a schermo tramite pacchetto locale
+        if (notification != null && android != null && !kIsWeb) {
+          _localNotificationsPlugin.show(
+            notification.hashCode,
+            notification.title,
+            notification.body,
+            NotificationDetails(
+              android: AndroidNotificationDetails(
+                channel.id,
+                channel.name,
+                channelDescription: channel.description,
+                icon: '@mipmap/ic_launcher',
+                importance: Importance.max,
+                priority: Priority.high,
+                color: const Color(0xFF06B6D4), // Cyan Accent per l'icona
+              ),
+            ),
+          );
+        }
+
+        // Segnale per far aggiornare il TableCalendar in tempo reale
         onNotificationReceived.add(null);
       });
     } catch (e) {
@@ -48,13 +97,12 @@ class NotificationService {
 
   Future<String?> getDeviceToken() async {
     if (!_isFirebaseSupported) {
-      debugPrint('⚠️ Ambiente Linux/Windows: Generato FCM Token fake per testing.');
       return "fake_token_for_desktop_testing";
     }
 
     try {
       String? token = await _firebaseMessaging.getToken();
-      debugPrint('🔑 FCM Token: $token');
+      debugPrint('🔑 FCM Token Rigenerato: $token');
       return token;
     } catch (e) {
       debugPrint('❌ Errore recupero FCM Token: $e');
