@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../data/services/auth_service.dart';
@@ -16,10 +17,18 @@ class AuthCubit extends Cubit<AuthState> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('userToken');
+      final userDataString = prefs.getString('userData');
 
-      if (token != null) {
+      if (token != null && userDataString != null) {
+        final userData = jsonDecode(userDataString);
+        final user = UserModel.fromJson(userData);
+
         _setupNotifications();
-        emit(AuthAuthenticated(UserModel(id: '1', email: '', nome: 'Utente')));
+        emit(AuthAuthenticated(user));
+      } else if (token != null) {
+        // Fallback di sicurezza se esiste token ma non i dati
+        _setupNotifications();
+        emit(AuthAuthenticated(UserModel(id: '', email: '', nome: 'Utente')));
       } else {
         emit(AuthUnauthenticated());
       }
@@ -40,11 +49,11 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> signup(
-    String nome,
-    String email,
-    String password,
-    String dataNascita,
-  ) async {
+      String nome,
+      String email,
+      String password,
+      String dataNascita,
+      ) async {
     emit(AuthLoading());
     try {
       final userWithToken = await _authService.signup(

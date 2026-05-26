@@ -1,4 +1,3 @@
-// lib/domain/models/user_model.dart
 class UserModel {
   final String id;
   final String email;
@@ -14,7 +13,6 @@ class UserModel {
     this.token,
   });
 
-  // Factory per deserializzare il JSON che arriva da Spring Boot
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       id: json['id'] ?? '',
@@ -23,5 +21,15 @@ class UserModel {
       dataNascita: json['dataNascita'],
       token: json['token'],
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'email': email,
+      'nome': nome,
+      'dataNascita': dataNascita,
+      'token': token,
+    };
   }
 }

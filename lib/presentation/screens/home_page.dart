@@ -62,6 +62,14 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _showSettingsModal() {
+    final List<String> briefingTimes = [];
+    for (int h = 1; h <= 24; h++) {
+      briefingTimes.add('${h.toString().padLeft(2, '0')}:00');
+      if (h < 24) {
+        briefingTimes.add('${h.toString().padLeft(2, '0')}:30');
+      }
+    }
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -114,9 +122,7 @@ class _HomePageState extends State<HomePage> {
                         color: Colors.white,
                       ),
                       isExpanded: true,
-                      items: ["07:00", "08:00", "09:00", "10:00"].map((
-                        String time,
-                      ) {
+                      items: briefingTimes.map((String time) {
                         return DropdownMenuItem<String>(
                           value: time,
                           child: Text(time),
@@ -225,7 +231,7 @@ class _HomePageState extends State<HomePage> {
         if (state is AuthUnauthenticated) {
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (context) => const LoginPage()),
-            (route) => false,
+                (route) => false,
           );
         }
       },
@@ -298,7 +304,7 @@ class _HomePageState extends State<HomePage> {
                                   calendarIndex = _cachedCalendars.length - 1;
                                 }
                                 final calendar =
-                                    _cachedCalendars[calendarIndex];
+                                _cachedCalendars[calendarIndex];
                                 return DailyDashboardView(
                                   title: calendar.nome,
                                   isSharedView: true,
@@ -341,7 +347,7 @@ class _HomePageState extends State<HomePage> {
               String userName = "Utente";
               if (state is AuthAuthenticated) {
                 try {
-                  userName = (state as dynamic).user.nome;
+                  userName = state.user.nome;
                 } catch (_) {}
               }
               return Text(
@@ -419,7 +425,7 @@ class _HomePageState extends State<HomePage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: List.generate(
           pageCount,
-          (index) => GestureDetector(
+              (index) => GestureDetector(
             onTap: () {
               _pageController.animateToPage(
                 index,
@@ -438,11 +444,11 @@ class _HomePageState extends State<HomePage> {
                     : Colors.white.withValues(alpha: 0.3),
                 boxShadow: _dashboardIndex == index
                     ? [
-                        BoxShadow(
-                          color: Colors.white.withValues(alpha: 0.8),
-                          blurRadius: 10,
-                        ),
-                      ]
+                  BoxShadow(
+                    color: Colors.white.withValues(alpha: 0.8),
+                    blurRadius: 10,
+                  ),
+                ]
                     : [],
               ),
             ),
