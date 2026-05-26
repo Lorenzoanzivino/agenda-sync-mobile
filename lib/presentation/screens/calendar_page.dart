@@ -75,11 +75,13 @@ class _CalendarPageState extends State<CalendarPage> {
   }
 
   void _showSettingsModal() {
-    final List<String> briefingTimes = List.generate(48, (index) {
-      final int hour = index ~/ 2;
-      final String minute = (index % 2 == 0) ? "00" : "30";
-      return "${hour.toString().padLeft(2, '0')}:$minute";
-    });
+    final List<String> briefingTimes = [];
+    for (int h = 1; h <= 24; h++) {
+      briefingTimes.add('${h.toString().padLeft(2, '0')}:00');
+      if (h < 24) {
+        briefingTimes.add('${h.toString().padLeft(2, '0')}:30');
+      }
+    }
 
     showModalBottomSheet(
       context: context,
@@ -200,11 +202,12 @@ class _CalendarPageState extends State<CalendarPage> {
         actions: [
           TextButton(
             onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
+              final nav = Navigator.of(ctx);
+
               await Clipboard.setData(ClipboardData(text: code));
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Codice copiato negli appunti!')));
-                Navigator.pop(ctx);
-              }
+              messenger.showSnackBar(const SnackBar(content: Text('Codice copiato negli appunti!')));
+              nav.pop();
             },
             child: const Text(AppStrings.btnCopia, style: TextStyle(color: Colors.white)),
           ),
