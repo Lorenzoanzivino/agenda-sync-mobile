@@ -75,7 +75,6 @@ class _CalendarPageState extends State<CalendarPage> {
   }
 
   void _showSettingsModal() {
-    // Genera la lista di orari (00:00, 00:30, 01:00 ... 23:30)
     final List<String> briefingTimes = List.generate(48, (index) {
       final int hour = index ~/ 2;
       final String minute = (index % 2 == 0) ? "00" : "30";
@@ -200,10 +199,12 @@ class _CalendarPageState extends State<CalendarPage> {
         ),
         actions: [
           TextButton(
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: code));
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(AppStrings.snackCopiato)));
-              Navigator.pop(ctx);
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: code));
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Codice copiato negli appunti!')));
+                Navigator.pop(ctx);
+              }
             },
             child: const Text(AppStrings.btnCopia, style: TextStyle(color: Colors.white)),
           ),
@@ -374,7 +375,7 @@ class _CalendarPageState extends State<CalendarPage> {
                       color: Colors.white.withValues(alpha: 0.2),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.priority_high, color: Colors.white, size: 20),
+                    child: const Icon(Icons.priority_high, color: Colors.white, size: 16),
                   ),
                 ),
               ],
@@ -386,7 +387,7 @@ class _CalendarPageState extends State<CalendarPage> {
                 Container(
                   decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
                   child: IconButton(
-                    icon: const Icon(Icons.delete_outline, color: Colors.black),
+                    icon: const Icon(Icons.delete_outline, color: Colors.black, size: 20),
                     onPressed: () => _confirmDeleteCalendar(currentCalendar!.id, currentCalendar.nome),
                   ),
                 ),
@@ -395,7 +396,7 @@ class _CalendarPageState extends State<CalendarPage> {
               Container(
                 decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
                 child: IconButton(
-                  icon: const Icon(Icons.add, color: Colors.black),
+                  icon: const Icon(Icons.add, color: Colors.black, size: 20),
                   onPressed: () {
                     if (isShared && _cachedCalendars.isEmpty) {
                       showCalendarManagementModal(context);
@@ -415,7 +416,7 @@ class _CalendarPageState extends State<CalendarPage> {
               Container(
                 decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), shape: BoxShape.circle),
                 child: IconButton(
-                  icon: const Icon(Icons.settings, color: Colors.white),
+                  icon: const Icon(Icons.settings, color: Colors.white, size: 20),
                   onPressed: _showSettingsModal,
                 ),
               ),
@@ -487,20 +488,22 @@ class _CalendarPageState extends State<CalendarPage> {
                             if (events.isEmpty) return const SizedBox();
 
                             return Positioned(
-                              bottom: 6,
+                              right: 4,
+                              bottom: 4,
                               child: Container(
-                                width: 18,
-                                height: 18,
+                                width: 16,
+                                height: 16,
                                 decoration: BoxDecoration(
-                                  color: isSharedView ? Colors.cyanAccent : Colors.redAccent,
+                                  color: isSharedView ? Colors.cyanAccent.withValues(alpha: 0.9) : Colors.redAccent.withValues(alpha: 0.9),
                                   shape: BoxShape.circle,
+                                  boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 2)],
                                 ),
                                 alignment: Alignment.center,
                                 child: Text(
                                   '${events.length}',
                                   style: TextStyle(
                                     color: isSharedView ? Colors.black : Colors.white,
-                                    fontSize: 11,
+                                    fontSize: 9,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),

@@ -206,7 +206,7 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
   Future<void> _saveCurrentAsTemplate() async {
     if (_titoloCtrl.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Inserisci almeno il titolo per salvare un modello.'), backgroundColor: Colors.redAccent),
+        const SnackBar(content: Text('I campi obbligatori contrassegnati da * non possono essere vuoti.'), backgroundColor: Colors.redAccent),
       );
       return;
     }
@@ -346,10 +346,38 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
     if (picked != null) setState(() => _selectedDate = picked);
   }
 
+  bool _isValidTime(String h1, String m1, String h2, String m2) {
+    final startMins = int.parse(h1) * 60 + int.parse(m1);
+    final endMins = int.parse(h2) * 60 + int.parse(m2);
+    return startMins < endMins;
+  }
+
+  void _onStartTimeChanged(String h, String m) {
+    if (!_isValidTime(h, m, _endHour, _endMinute)) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Attenzione: l\'orario di inizio non può superare la fine. L\'orario di fine è stato aggiornato automaticamente.'), backgroundColor: Colors.orangeAccent));
+      int newEndHour = (int.parse(h) + 1) % 24;
+      setState(() {
+        _startHour = h;
+        _startMinute = m;
+        _endHour = newEndHour.toString().padLeft(2, '0');
+      });
+    } else {
+      setState(() { _startHour = h; _startMinute = m; });
+    }
+  }
+
+  void _onEndTimeChanged(String h, String m) {
+    if (!_isValidTime(_startHour, _startMinute, h, m)) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Errore: l\'orario di fine non può essere antecedente o uguale all\'inizio.'), backgroundColor: Colors.redAccent));
+    } else {
+      setState(() { _endHour = h; _endMinute = m; });
+    }
+  }
+
   void _submit() {
     if (_titoloCtrl.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Il campo obbligatorio non può essere vuoto.'), backgroundColor: Colors.redAccent),
+        const SnackBar(content: Text('I campi obbligatori contrassegnati da * non possono essere vuoti.'), backgroundColor: Colors.redAccent),
       );
       return;
     }
@@ -363,6 +391,13 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
     } else {
       start = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day, int.parse(_startHour), int.parse(_startMinute));
       end = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day, int.parse(_endHour), int.parse(_endMinute));
+
+      if (!start.isBefore(end)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Errore: la data di fine deve essere successiva a quella di inizio.'), backgroundColor: Colors.redAccent),
+        );
+        return;
+      }
     }
 
     if (widget.task == null) {
@@ -464,7 +499,7 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
                   const SizedBox(height: 15),
                   TextField(
                     controller: _titoloCtrl, style: const TextStyle(color: Colors.white),
-                    decoration: InputDecoration(hintText: AppStrings.formTitoloHint, hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)), filled: true, fillColor: Colors.white.withValues(alpha: 0.1), border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none)),
+                    decoration: InputDecoration(hintText: "${AppStrings.formTitoloHint} *", hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)), filled: true, fillColor: Colors.white.withValues(alpha: 0.1), border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none)),
                   ),
                   const SizedBox(height: 15),
 
@@ -510,12 +545,20 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
                   if (!_isAllDay) ...[
                     Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                       const Text(AppStrings.formInizio, style: TextStyle(color: Colors.white70, fontSize: 16)),
-                      Row(children: [_buildTimeDropdown(_startHour, _hours, (v) => setState(() => _startHour = v!)), const Text(" : ", style: TextStyle(color: Colors.white, fontSize: 16)), _buildTimeDropdown(_startMinute, _minutes, (v) => setState(() => _startMinute = v!))])
+                      Row(children: [
+                        _buildTimeDropdown(_startHour, _hours, (v) => _onStartTimeChanged(v!, _startMinute)),
+                        const Text(" : ", style: TextStyle(color: Colors.white, fontSize: 16)),
+                        _buildTimeDropdown(_startMinute, _minutes, (v) => _onStartTimeChanged(_startHour, v!))
+                      ])
                     ]),
                     const SizedBox(height: 15),
                     Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                       const Text(AppStrings.formFine, style: TextStyle(color: Colors.white70, fontSize: 16)),
-                      Row(children: [_buildTimeDropdown(_endHour, _hours, (v) => setState(() => _endHour = v!)), const Text(" : ", style: TextStyle(color: Colors.white, fontSize: 16)), _buildTimeDropdown(_endMinute, _minutes, (v) => setState(() => _endMinute = v!))])
+                      Row(children: [
+                        _buildTimeDropdown(_endHour, _hours, (v) => _onEndTimeChanged(v!, _endMinute)),
+                        const Text(" : ", style: TextStyle(color: Colors.white, fontSize: 16)),
+                        _buildTimeDropdown(_endMinute, _minutes, (v) => _onEndTimeChanged(_endHour, v!))
+                      ])
                     ]),
                   ],
                   const SizedBox(height: 15),

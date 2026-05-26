@@ -94,7 +94,7 @@ class _CalendarManagementModalState extends State<_CalendarManagementModal> {
                   const SizedBox(height: 30),
 
                   if (_isCreating) ...[
-                    const Text(AppStrings.labelNomeCalendario, style: TextStyle(color: Colors.white70, fontSize: 14)),
+                    const Text("${AppStrings.labelNomeCalendario} *", style: TextStyle(color: Colors.white70, fontSize: 14)),
                     const SizedBox(height: 10),
                     TextField(
                       controller: _nomeCtrl,
@@ -102,7 +102,7 @@ class _CalendarManagementModalState extends State<_CalendarManagementModal> {
                       decoration: InputDecoration(filled: true, fillColor: Colors.white.withValues(alpha: 0.1), border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none)),
                     ),
                   ] else ...[
-                    const Text(AppStrings.labelCodiceInvito, style: TextStyle(color: Colors.white70, fontSize: 14)),
+                    const Text("${AppStrings.labelCodiceInvito} *", style: TextStyle(color: Colors.white70, fontSize: 14)),
                     const SizedBox(height: 10),
                     TextField(
                       controller: _codeCtrl,
@@ -117,11 +117,10 @@ class _CalendarManagementModalState extends State<_CalendarManagementModal> {
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
                       onPressed: state is CalendarLoading ? null : () {
-                        // Fix Punto 12: Controllo e Banner per campi vuoti
                         if (_isCreating) {
                           if (_nomeCtrl.text.trim().isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Il campo obbligatorio non può essere vuoto.'), backgroundColor: Colors.redAccent),
+                              const SnackBar(content: Text('I campi obbligatori contrassegnati da * non possono essere vuoti.'), backgroundColor: Colors.redAccent),
                             );
                             return;
                           }
@@ -129,7 +128,7 @@ class _CalendarManagementModalState extends State<_CalendarManagementModal> {
                         } else {
                           if (_codeCtrl.text.trim().isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Il campo obbligatorio non può essere vuoto.'), backgroundColor: Colors.redAccent),
+                              const SnackBar(content: Text('I campi obbligatori contrassegnati da * non possono essere vuoti.'), backgroundColor: Colors.redAccent),
                             );
                             return;
                           }
@@ -166,9 +165,12 @@ class _CalendarManagementModalState extends State<_CalendarManagementModal> {
         ),
         actions: [
           TextButton(
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: code));
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(AppStrings.snackCopiato)));
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: code));
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Codice copiato negli appunti!')));
+                Navigator.pop(ctx);
+              }
             },
             child: const Text(AppStrings.btnCopia, style: TextStyle(color: Colors.white)),
           ),
