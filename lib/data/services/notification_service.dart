@@ -8,7 +8,9 @@ import 'package:flutter/foundation.dart';
 class NotificationService {
   static final StreamController<void> onNotificationReceived = StreamController.broadcast();
 
-  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+  // FIX: Tornato a essere un 'get' (evita il crash istantaneo su Linux e appena si apre l'app)
+  FirebaseMessaging get _firebaseMessaging => FirebaseMessaging.instance;
+
   final FlutterLocalNotificationsPlugin _localNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
   bool get _isFirebaseSupported {
