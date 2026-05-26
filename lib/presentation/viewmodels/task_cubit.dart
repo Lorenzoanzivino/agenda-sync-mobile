@@ -11,13 +11,16 @@ abstract class TaskState extends Equatable {
 }
 
 class TaskInitial extends TaskState {}
+
 class TaskLoading extends TaskState {}
+
 class TaskLoaded extends TaskState {
   final List<TaskModel> tasks;
   const TaskLoaded(this.tasks);
   @override
   List<Object?> get props => [tasks];
 }
+
 class TaskError extends TaskState {
   final String message;
   const TaskError(this.message);
@@ -90,7 +93,8 @@ class TaskCubit extends Cubit<TaskState> {
     }
   }
 
-  Future<void> updateTask(String id, {
+  Future<void> updateTask(
+    String id, {
     required String titolo,
     required String descrizione,
     required DateTime dataInizio,
@@ -113,7 +117,9 @@ class TaskCubit extends Cubit<TaskState> {
         colore: colore,
       );
       if (state is TaskLoaded) {
-        final tasks = (state as TaskLoaded).tasks.map((t) => t.id == id ? updatedTask : t).toList();
+        final tasks = (state as TaskLoaded).tasks
+            .map((t) => t.id == id ? updatedTask : t)
+            .toList();
         emit(TaskLoaded(_sortTasks(tasks)));
       } else {
         fetchTasks();
@@ -129,7 +135,9 @@ class TaskCubit extends Cubit<TaskState> {
     try {
       await _taskService.deleteTask(id);
       if (state is TaskLoaded) {
-        final tasks = (state as TaskLoaded).tasks.where((t) => t.id != id).toList();
+        final tasks = (state as TaskLoaded).tasks
+            .where((t) => t.id != id)
+            .toList();
         emit(TaskLoaded(_sortTasks(tasks)));
       } else {
         fetchTasks();
@@ -146,7 +154,9 @@ class TaskCubit extends Cubit<TaskState> {
       debugPrint("⏳ Cancellazione di massa per gli ID: $ids");
       await _taskService.bulkDeleteTasks(ids);
       if (state is TaskLoaded) {
-        final remainingTasks = (state as TaskLoaded).tasks.where((t) => !ids.contains(t.id)).toList();
+        final remainingTasks = (state as TaskLoaded).tasks
+            .where((t) => !ids.contains(t.id))
+            .toList();
         emit(TaskLoaded(_sortTasks(remainingTasks)));
       } else {
         fetchTasks();

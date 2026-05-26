@@ -50,7 +50,12 @@ class _HomePageState extends State<HomePage> {
 
   void _onBottomNavTapped(int index) {
     if (index == 1) {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => CalendarPage(initialIndex: _dashboardIndex)));
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CalendarPage(initialIndex: _dashboardIndex),
+        ),
+      );
     } else if (index == 2) {
       context.read<AuthCubit>().logout();
     }
@@ -68,34 +73,67 @@ class _HomePageState extends State<HomePage> {
             padding: const EdgeInsets.all(30),
             decoration: BoxDecoration(
               color: Colors.black.withValues(alpha: 0.7),
-              border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.2), width: 1.5)),
+              border: Border(
+                top: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  width: 1.5,
+                ),
+              ),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(AppStrings.impostazioni, style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                const Text(
+                  AppStrings.impostazioni,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 20),
-                const Text(AppStrings.briefingLabel, style: TextStyle(color: Colors.white70, fontSize: 16)),
+                const Text(
+                  AppStrings.briefingLabel,
+                  style: TextStyle(color: Colors.white70, fontSize: 16),
+                ),
                 const SizedBox(height: 10),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 15),
-                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(15)),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(15),
+                  ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
                       value: _preferredNotificationTime,
                       dropdownColor: const Color(0xFF1E1E1E),
                       style: const TextStyle(color: Colors.white, fontSize: 18),
-                      icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
+                      icon: const Icon(
+                        Icons.arrow_drop_down,
+                        color: Colors.white,
+                      ),
                       isExpanded: true,
-                      items: ["07:00", "08:00", "09:00", "10:00"].map((String time) {
-                        return DropdownMenuItem<String>(value: time, child: Text(time));
+                      items: ["07:00", "08:00", "09:00", "10:00"].map((
+                        String time,
+                      ) {
+                        return DropdownMenuItem<String>(
+                          value: time,
+                          child: Text(time),
+                        );
                       }).toList(),
                       onChanged: (val) {
                         if (val != null) {
                           setState(() => _preferredNotificationTime = val);
                           Navigator.pop(ctx);
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("${AppStrings.snackOrarioAggiornato}$val"), backgroundColor: Colors.green));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                "${AppStrings.snackOrarioAggiornato}$val",
+                              ),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
                         }
                       },
                     ),
@@ -109,10 +147,18 @@ class _HomePageState extends State<HomePage> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white.withValues(alpha: 0.15),
                       elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15), side: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        side: BorderSide(
+                          color: Colors.white.withValues(alpha: 0.3),
+                        ),
+                      ),
                     ),
                     icon: const Icon(Icons.people_alt, color: Colors.white),
-                    label: const Text(AppStrings.btnGestisciCondivisione, style: TextStyle(color: Colors.white)),
+                    label: const Text(
+                      AppStrings.btnGestisciCondivisione,
+                      style: TextStyle(color: Colors.white),
+                    ),
                     onPressed: () {
                       Navigator.pop(ctx);
                       showCalendarManagementModal(context);
@@ -133,23 +179,39 @@ class _HomePageState extends State<HomePage> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1E1E1E),
-        title: const Text(AppStrings.alertEliminaCalTitolo, style: TextStyle(color: Colors.white)),
-        content: Text(AppStrings.alertEliminaCalCorpo.replaceFirst('{name}', calendarName), style: const TextStyle(color: Colors.white70)),
+        title: const Text(
+          AppStrings.alertEliminaCalTitolo,
+          style: TextStyle(color: Colors.white),
+        ),
+        content: Text(
+          AppStrings.alertEliminaCalCorpo.replaceFirst('{name}', calendarName),
+          style: const TextStyle(color: Colors.white70),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text(AppStrings.btnAnnulla, style: TextStyle(color: Colors.white54)),
+            child: const Text(
+              AppStrings.btnAnnulla,
+              style: TextStyle(color: Colors.white54),
+            ),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
               int totalShared = _cachedCalendars.length;
               if (totalShared > 1 && _dashboardIndex == totalShared) {
-                _pageController.animateToPage(_dashboardIndex - 1, duration: const Duration(milliseconds: 300), curve: Curves.ease);
+                _pageController.animateToPage(
+                  _dashboardIndex - 1,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.ease,
+                );
               }
               context.read<CalendarCubit>().deleteCalendar(calendarId);
             },
-            child: const Text(AppStrings.btnElimina, style: TextStyle(color: Colors.redAccent)),
+            child: const Text(
+              AppStrings.btnElimina,
+              style: TextStyle(color: Colors.redAccent),
+            ),
           ),
         ],
       ),
@@ -163,7 +225,7 @@ class _HomePageState extends State<HomePage> {
         if (state is AuthUnauthenticated) {
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (context) => const LoginPage()),
-                (route) => false,
+            (route) => false,
           );
         }
       },
@@ -173,7 +235,9 @@ class _HomePageState extends State<HomePage> {
             _cachedCalendars = state.sharedCalendars;
           }
 
-          int pageCount = _cachedCalendars.isEmpty ? 2 : _cachedCalendars.length + 1;
+          int pageCount = _cachedCalendars.isEmpty
+              ? 2
+              : _cachedCalendars.length + 1;
           bool isShared = _dashboardIndex > 0;
 
           Color currentBgColor = AppAtmospheres.privateBg;
@@ -209,21 +273,38 @@ class _HomePageState extends State<HomePage> {
                       Expanded(
                         child: PageView.builder(
                           controller: _pageController,
-                          onPageChanged: (index) => setState(() => _dashboardIndex = index),
+                          onPageChanged: (index) =>
+                              setState(() => _dashboardIndex = index),
                           itemCount: pageCount,
                           itemBuilder: (context, index) {
                             if (index == 0) {
-                              return const DailyDashboardView(title: AppStrings.dashboardPrivata, isSharedView: false, calendarId: null, inviteCode: null);
+                              return const DailyDashboardView(
+                                title: AppStrings.dashboardPrivata,
+                                isSharedView: false,
+                                calendarId: null,
+                                inviteCode: null,
+                              );
                             } else {
                               if (_cachedCalendars.isEmpty) {
-                                return const DailyDashboardView(title: AppStrings.calendarioCondivisoDefault, isSharedView: true, calendarId: null, inviteCode: null);
+                                return const DailyDashboardView(
+                                  title: AppStrings.calendarioCondivisoDefault,
+                                  isSharedView: true,
+                                  calendarId: null,
+                                  inviteCode: null,
+                                );
                               } else {
                                 int calendarIndex = index - 1;
                                 if (calendarIndex >= _cachedCalendars.length) {
                                   calendarIndex = _cachedCalendars.length - 1;
                                 }
-                                final calendar = _cachedCalendars[calendarIndex];
-                                return DailyDashboardView(title: calendar.nome, isSharedView: true, calendarId: calendar.id, inviteCode: calendar.inviteCode);
+                                final calendar =
+                                    _cachedCalendars[calendarIndex];
+                                return DailyDashboardView(
+                                  title: calendar.nome,
+                                  isSharedView: true,
+                                  calendarId: calendar.id,
+                                  inviteCode: calendar.inviteCode,
+                                );
                               }
                             }
                           },
@@ -263,23 +344,39 @@ class _HomePageState extends State<HomePage> {
                   userName = (state as dynamic).user.nome;
                 } catch (_) {}
               }
-              return Text("${AppStrings.ciao} $userName", style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold));
+              return Text(
+                "${AppStrings.ciao} $userName",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              );
             },
           ),
           Row(
             children: [
               if (isShared && currentCalendar != null) ...[
                 Container(
-                  decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
                   child: IconButton(
                     icon: const Icon(Icons.delete_outline, color: Colors.black),
-                    onPressed: () => _confirmDeleteCalendar(currentCalendar!.id, currentCalendar.nome),
+                    onPressed: () => _confirmDeleteCalendar(
+                      currentCalendar!.id,
+                      currentCalendar.nome,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 10),
               ],
               Container(
-                decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
                 child: IconButton(
                   icon: const Icon(Icons.add, color: Colors.black),
                   onPressed: () {
@@ -299,7 +396,10 @@ class _HomePageState extends State<HomePage> {
               ),
               const SizedBox(width: 10),
               Container(
-                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
                 child: IconButton(
                   icon: const Icon(Icons.settings, color: Colors.white),
                   onPressed: _showSettingsModal,
@@ -317,23 +417,37 @@ class _HomePageState extends State<HomePage> {
       padding: const EdgeInsets.only(top: 5, bottom: 10),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: List.generate(pageCount, (index) => GestureDetector(
-          onTap: () {
-            _pageController.animateToPage(
-              index,
-              duration: const Duration(milliseconds: 400),
-              curve: Curves.easeInOut,
-            );
-          },
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 5), width: 12, height: 12,
-            decoration: BoxDecoration(
+        children: List.generate(
+          pageCount,
+          (index) => GestureDetector(
+            onTap: () {
+              _pageController.animateToPage(
+                index,
+                duration: const Duration(milliseconds: 400),
+                curve: Curves.easeInOut,
+              );
+            },
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 5),
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: _dashboardIndex == index ? Colors.white : Colors.white.withValues(alpha: 0.3),
-                boxShadow: _dashboardIndex == index ? [BoxShadow(color: Colors.white.withValues(alpha: 0.8), blurRadius: 10)] : []
+                color: _dashboardIndex == index
+                    ? Colors.white
+                    : Colors.white.withValues(alpha: 0.3),
+                boxShadow: _dashboardIndex == index
+                    ? [
+                        BoxShadow(
+                          color: Colors.white.withValues(alpha: 0.8),
+                          blurRadius: 10,
+                        ),
+                      ]
+                    : [],
+              ),
             ),
           ),
-        )),
+        ),
       ),
     );
   }
@@ -344,8 +458,10 @@ class _HomePageState extends State<HomePage> {
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
           decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.4),
-              border: const Border(top: BorderSide(color: Colors.white10, width: 0.5))
+            color: Colors.black.withValues(alpha: 0.4),
+            border: const Border(
+              top: BorderSide(color: Colors.white10, width: 0.5),
+            ),
           ),
           child: SafeArea(
             child: Padding(
@@ -354,7 +470,11 @@ class _HomePageState extends State<HomePage> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   _buildNavItem(Icons.dashboard_rounded, AppStrings.navHome, 0),
-                  _buildNavItem(Icons.calendar_month_rounded, AppStrings.navCalendario, 1),
+                  _buildNavItem(
+                    Icons.calendar_month_rounded,
+                    AppStrings.navCalendario,
+                    1,
+                  ),
                   _buildNavItem(Icons.logout_rounded, AppStrings.navLogout, 2),
                 ],
               ),
@@ -373,7 +493,9 @@ class _HomePageState extends State<HomePage> {
         duration: const Duration(milliseconds: 300),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
+          color: isSelected
+              ? Colors.white.withValues(alpha: 0.2)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
@@ -381,8 +503,14 @@ class _HomePageState extends State<HomePage> {
             Icon(icon, color: isSelected ? Colors.white : Colors.white54),
             if (isSelected) ...[
               const SizedBox(width: 8),
-              Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            ]
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ],
         ),
       ),

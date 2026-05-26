@@ -11,7 +11,9 @@ class TaskService {
       final List<dynamic> data = jsonDecode(response.body);
       return data.map((json) => TaskModel.fromJson(json)).toList();
     } else {
-      throw Exception('Impossibile caricare i task. Status: ${response.statusCode}');
+      throw Exception(
+        'Impossibile caricare i task. Status: ${response.statusCode}',
+      );
     }
   }
 
@@ -33,7 +35,7 @@ class TaskService {
       "tuttoIlGiorno": tuttoIlGiorno,
       "colore": colore,
       "priorita": priorita,
-      "status": "TODO"
+      "status": "TODO",
     };
 
     if (sharedCalendarId != null) {
@@ -48,7 +50,8 @@ class TaskService {
     }
   }
 
-  Future<TaskModel> updateTask(String id, {
+  Future<TaskModel> updateTask(
+    String id, {
     required String titolo,
     required String descrizione,
     required DateTime dataInizio,
@@ -66,7 +69,7 @@ class TaskService {
       "tuttoIlGiorno": tuttoIlGiorno,
       "colore": colore,
       "priorita": priorita,
-      "status": "TODO"
+      "status": "TODO",
     };
 
     if (sharedCalendarId != null) {
@@ -77,25 +80,29 @@ class TaskService {
     if (response.statusCode == 200) {
       return TaskModel.fromJson(jsonDecode(response.body));
     } else {
-      throw Exception('Errore aggiornamento task. Status: ${response.statusCode}');
+      throw Exception(
+        'Errore aggiornamento task. Status: ${response.statusCode}',
+      );
     }
   }
 
   Future<void> deleteTask(String id) async {
     final response = await _apiClient.delete('/tasks/$id');
     if (response.statusCode != 200 && response.statusCode != 204) {
-      throw Exception('Impossibile eliminare il task. Status: ${response.statusCode}');
+      throw Exception(
+        'Impossibile eliminare il task. Status: ${response.statusCode}',
+      );
     }
   }
 
   Future<void> bulkDeleteTasks(List<String> ids) async {
-    final payload = <String, dynamic>{
-      "taskIds": ids
-    };
+    final payload = <String, dynamic>{"taskIds": ids};
 
     final response = await _apiClient.post('/tasks/bulk-delete', payload);
     if (response.statusCode != 200 && response.statusCode != 204) {
-      throw Exception('Errore cancellazione massiva. Status: ${response.statusCode}');
+      throw Exception(
+        'Errore cancellazione massiva. Status: ${response.statusCode}',
+      );
     }
   }
 }

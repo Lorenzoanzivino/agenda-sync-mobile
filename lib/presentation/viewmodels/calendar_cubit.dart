@@ -11,13 +11,16 @@ abstract class CalendarState extends Equatable {
 }
 
 class CalendarInitial extends CalendarState {}
+
 class CalendarLoading extends CalendarState {}
+
 class CalendarLoaded extends CalendarState {
   final List<SharedCalendarModel> sharedCalendars;
   const CalendarLoaded(this.sharedCalendars);
   @override
   List<Object?> get props => [sharedCalendars];
 }
+
 class CalendarActionSuccess extends CalendarState {
   final String message;
   final String? codeToShow;
@@ -25,6 +28,7 @@ class CalendarActionSuccess extends CalendarState {
   @override
   List<Object?> get props => [message, codeToShow];
 }
+
 class CalendarError extends CalendarState {
   final String message;
   const CalendarError(this.message);
@@ -52,10 +56,12 @@ class CalendarCubit extends Cubit<CalendarState> {
     emit(CalendarLoading());
     try {
       final newCalendar = await _calendarService.createSharedCalendar(nome);
-      emit(CalendarActionSuccess(
+      emit(
+        CalendarActionSuccess(
           "Calendario creato con successo!",
-          codeToShow: newCalendar.inviteCode
-      ));
+          codeToShow: newCalendar.inviteCode,
+        ),
+      );
       fetchSharedCalendars();
     } catch (e, stacktrace) {
       debugPrint("❌ ERRORE IN createCalendar: $e\n$stacktrace");
@@ -68,7 +74,9 @@ class CalendarCubit extends Cubit<CalendarState> {
     emit(CalendarLoading());
     try {
       await _calendarService.joinSharedCalendar(inviteCode);
-      emit(const CalendarActionSuccess("Ti sei unito al calendario con successo!"));
+      emit(
+        const CalendarActionSuccess("Ti sei unito al calendario con successo!"),
+      );
       fetchSharedCalendars();
     } catch (e, stacktrace) {
       debugPrint("❌ ERRORE IN joinCalendar: $e\n$stacktrace");

@@ -23,7 +23,8 @@ void main() async {
 
   await initializeDateFormatting('it_IT', null);
 
-  bool isFirebaseSupported = kIsWeb || Platform.isAndroid || Platform.isIOS || Platform.isMacOS;
+  bool isFirebaseSupported =
+      kIsWeb || Platform.isAndroid || Platform.isIOS || Platform.isMacOS;
 
   if (isFirebaseSupported) {
     try {
@@ -32,7 +33,9 @@ void main() async {
       debugPrint("Firebase non inizializzato: $e");
     }
   } else {
-    debugPrint("Ambiente di test desktop rilevato: Firebase core disabilitato.");
+    debugPrint(
+      "Ambiente di test desktop rilevato: Firebase core disabilitato.",
+    );
   }
 
   runApp(const AgendaSyncApp());
@@ -53,12 +56,17 @@ class _AgendaSyncAppState extends State<AgendaSyncApp> {
   void initState() {
     super.initState();
     // Punto 11: Ascolto notifiche in foreground per allineamento UI Real-Time
-    _notificationSubscription = NotificationService.onNotificationReceived.stream.listen((_) {
-      setState(() {
-        _refreshKey++;
-      });
-      debugPrint('🔄 UI Aggiornata in tempo reale a seguito di notifica FCM (Chiave: $_refreshKey)');
-    });
+    _notificationSubscription = NotificationService
+        .onNotificationReceived
+        .stream
+        .listen((_) {
+          setState(() {
+            _refreshKey++;
+          });
+          debugPrint(
+            '🔄 UI Aggiornata in tempo reale a seguito di notifica FCM (Chiave: $_refreshKey)',
+          );
+        });
   }
 
   @override
@@ -74,12 +82,8 @@ class _AgendaSyncAppState extends State<AgendaSyncApp> {
         BlocProvider(
           create: (context) => AuthCubit(AuthService())..checkAuthStatus(),
         ),
-        BlocProvider(
-          create: (context) => TaskCubit(TaskService()),
-        ),
-        BlocProvider(
-          create: (context) => CalendarCubit(CalendarService()),
-        ),
+        BlocProvider(create: (context) => TaskCubit(TaskService())),
+        BlocProvider(create: (context) => CalendarCubit(CalendarService())),
       ],
       child: MaterialApp(
         title: 'Agenda Sync',
@@ -90,15 +94,15 @@ class _AgendaSyncAppState extends State<AgendaSyncApp> {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        supportedLocales: const [
-          Locale('it', 'IT'),
-        ],
+        supportedLocales: const [Locale('it', 'IT')],
         home: BlocBuilder<AuthCubit, AuthState>(
           builder: (context, state) {
             if (state is AuthLoading || state is AuthInitial) {
               return const Scaffold(
                 backgroundColor: Color(0xFF1E1B4B),
-                body: Center(child: CircularProgressIndicator(color: Colors.white)),
+                body: Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                ),
               );
             }
             if (state is AuthAuthenticated) {

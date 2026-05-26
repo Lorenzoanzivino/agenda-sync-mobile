@@ -6,12 +6,14 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/foundation.dart';
 
 class NotificationService {
-  static final StreamController<void> onNotificationReceived = StreamController.broadcast();
+  static final StreamController<void> onNotificationReceived =
+      StreamController.broadcast();
 
   // FIX: Tornato a essere un 'get' (evita il crash istantaneo su Linux e appena si apre l'app)
   FirebaseMessaging get _firebaseMessaging => FirebaseMessaging.instance;
 
-  final FlutterLocalNotificationsPlugin _localNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _localNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
 
   bool get _isFirebaseSupported {
     if (kIsWeb) return true;
@@ -20,17 +22,16 @@ class NotificationService {
 
   Future<void> initNotifications() async {
     if (!_isFirebaseSupported) {
-      debugPrint('⚠️ Ambiente Linux/Windows: Skip inizializzazione Firebase Messaging.');
+      debugPrint(
+        '⚠️ Ambiente Linux/Windows: Skip inizializzazione Firebase Messaging.',
+      );
       return;
     }
 
     try {
       // Richiesta permessi nativi
-      NotificationSettings settings = await _firebaseMessaging.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
+      NotificationSettings settings = await _firebaseMessaging
+          .requestPermission(alert: true, badge: true, sound: true);
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
         debugPrint('✅ Permessi notifiche concessi.');
@@ -39,20 +40,26 @@ class NotificationService {
       }
 
       // Configurazione canale di notifica per Android (Obbligatorio per Android 8.0+)
-      const AndroidInitializationSettings androidInitSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
-      const InitializationSettings initSettings = InitializationSettings(android: androidInitSettings);
+      const AndroidInitializationSettings androidInitSettings =
+          AndroidInitializationSettings('@mipmap/ic_launcher');
+      const InitializationSettings initSettings = InitializationSettings(
+        android: androidInitSettings,
+      );
       await _localNotificationsPlugin.initialize(initSettings);
 
       const AndroidNotificationChannel channel = AndroidNotificationChannel(
         'high_importance_channel',
         'Notifiche Importanti',
-        description: 'Canale utilizzato per notifiche push immediate (es. nuovi task).',
+        description:
+            'Canale utilizzato per notifiche push immediate (es. nuovi task).',
         importance: Importance.max,
       );
 
       if (Platform.isAndroid) {
         await _localNotificationsPlugin
-            .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >()
             ?.createNotificationChannel(channel);
       }
 
@@ -65,7 +72,9 @@ class NotificationService {
 
       // Listener per l'App in Foreground (Schermo acceso sull'app)
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        debugPrint('📥 Ricevuta notifica in Foreground: ${message.notification?.title}');
+        debugPrint(
+          '📥 Ricevuta notifica in Foreground: ${message.notification?.title}',
+        );
 
         RemoteNotification? notification = message.notification;
         AndroidNotification? android = message.notification?.android;

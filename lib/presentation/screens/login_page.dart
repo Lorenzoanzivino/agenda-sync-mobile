@@ -23,9 +23,7 @@ class _LoginPageState extends State<LoginPage> {
   final _dataNascitaController = TextEditingController();
 
   final _storage = const FlutterSecureStorage(
-    aOptions: AndroidOptions(
-      encryptedSharedPreferences: true,
-    ),
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
   );
 
   bool _isLogin = true;
@@ -82,16 +80,24 @@ class _LoginPageState extends State<LoginPage> {
     // VALIDAZIONE: Campi obbligatori comuni
     if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("I campi obbligatori non possono essere vuoti."), backgroundColor: Colors.redAccent),
+        const SnackBar(
+          content: Text("I campi obbligatori non possono essere vuoti."),
+          backgroundColor: Colors.redAccent,
+        ),
       );
       return;
     }
 
     // VALIDAZIONE: Formato Email (Regex Base)
-    final emailRegex = RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+");
+    final emailRegex = RegExp(
+      r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+",
+    );
     if (!emailRegex.hasMatch(email)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Formato email non valido. Es: utente@email.com"), backgroundColor: Colors.orangeAccent),
+        const SnackBar(
+          content: Text("Formato email non valido. Es: utente@email.com"),
+          backgroundColor: Colors.orangeAccent,
+        ),
       );
       return;
     }
@@ -110,7 +116,12 @@ class _LoginPageState extends State<LoginPage> {
       // VALIDAZIONE: Campi obbligatori Registrazione
       if (nome.isEmpty || dataNascita.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Tutti i campi sono obbligatori per la registrazione."), backgroundColor: Colors.redAccent),
+          const SnackBar(
+            content: Text(
+              "Tutti i campi sono obbligatori per la registrazione.",
+            ),
+            backgroundColor: Colors.redAccent,
+          ),
         );
         return;
       }
@@ -119,7 +130,12 @@ class _LoginPageState extends State<LoginPage> {
       final passwordRegex = RegExp(r"^(?=.*[0-9]).{6,}$");
       if (!passwordRegex.hasMatch(password)) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("La password deve contenere almeno 6 caratteri e un numero."), backgroundColor: Colors.orangeAccent),
+          const SnackBar(
+            content: Text(
+              "La password deve contenere almeno 6 caratteri e un numero.",
+            ),
+            backgroundColor: Colors.orangeAccent,
+          ),
         );
         return;
       }
@@ -139,8 +155,16 @@ class _LoginPageState extends State<LoginPage> {
       backgroundColor: AppAtmospheres.authBg,
       body: Stack(
         children: [
-          Positioned(top: -50, right: -50, child: _buildCircle(AppAtmospheres.authCircles[0], 300)),
-          Positioned(bottom: -100, left: -50, child: _buildCircle(AppAtmospheres.authCircles[1], 250)),
+          Positioned(
+            top: -50,
+            right: -50,
+            child: _buildCircle(AppAtmospheres.authCircles[0], 300),
+          ),
+          Positioned(
+            bottom: -100,
+            left: -50,
+            child: _buildCircle(AppAtmospheres.authCircles[1], 250),
+          ),
 
           Center(
             child: SingleChildScrollView(
@@ -149,7 +173,10 @@ class _LoginPageState extends State<LoginPage> {
                 listener: (context, state) {
                   if (state is AuthError) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(state.message), backgroundColor: Colors.redAccent),
+                      SnackBar(
+                        content: Text(state.message),
+                        backgroundColor: Colors.redAccent,
+                      ),
                     );
                   } else if (state is AuthAuthenticated) {
                     Navigator.of(context).pushReplacement(
@@ -183,18 +210,40 @@ class _LoginPageState extends State<LoginPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(_isLogin ? AppStrings.appName : AppStrings.registerTitle, style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
+              Text(
+                _isLogin ? AppStrings.appName : AppStrings.registerTitle,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const SizedBox(height: 30),
 
               if (!_isLogin) ...[
-                _buildTextField(_nomeController, AppStrings.labelNome, Icons.person, false),
+                _buildTextField(
+                  _nomeController,
+                  AppStrings.labelNome,
+                  Icons.person,
+                  false,
+                ),
                 const SizedBox(height: 20),
               ],
 
-              _buildTextField(_emailController, AppStrings.labelEmail, Icons.email, false),
+              _buildTextField(
+                _emailController,
+                AppStrings.labelEmail,
+                Icons.email,
+                false,
+              ),
               const SizedBox(height: 20),
 
-              _buildTextField(_passwordController, AppStrings.labelPassword, Icons.lock, true),
+              _buildTextField(
+                _passwordController,
+                AppStrings.labelPassword,
+                Icons.lock,
+                true,
+              ),
               const SizedBox(height: 20),
 
               if (!_isLogin) ...[
@@ -210,12 +259,25 @@ class _LoginPageState extends State<LoginPage> {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
                   ),
-                  onPressed: state is AuthLoading ? null : () => _submitForm(context),
+                  onPressed: state is AuthLoading
+                      ? null
+                      : () => _submitForm(context),
                   child: state is AuthLoading
                       ? const CircularProgressIndicator()
-                      : Text(_isLogin ? AppStrings.btnAccedi : AppStrings.btnRegistrati, style: const TextStyle(color: AppAtmospheres.authBg, fontWeight: FontWeight.bold, fontSize: 16)),
+                      : Text(
+                          _isLogin
+                              ? AppStrings.btnAccedi
+                              : AppStrings.btnRegistrati,
+                          style: const TextStyle(
+                            color: AppAtmospheres.authBg,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -229,7 +291,7 @@ class _LoginPageState extends State<LoginPage> {
                   _isLogin ? AppStrings.toRegister : AppStrings.toLogin,
                   style: const TextStyle(color: Colors.white70),
                 ),
-              )
+              ),
             ],
           ),
         ),
@@ -237,7 +299,12 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String hint, IconData icon, bool isPassword) {
+  Widget _buildTextField(
+    TextEditingController controller,
+    String hint,
+    IconData icon,
+    bool isPassword,
+  ) {
     return TextField(
       controller: controller,
       obscureText: isPassword,
@@ -248,7 +315,10 @@ class _LoginPageState extends State<LoginPage> {
         prefixIcon: Icon(icon, color: Colors.white70),
         filled: true,
         fillColor: Colors.white.withValues(alpha: 0.1),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: BorderSide.none,
+        ),
       ),
     );
   }
@@ -265,17 +335,23 @@ class _LoginPageState extends State<LoginPage> {
         prefixIcon: const Icon(Icons.calendar_today, color: Colors.white70),
         filled: true,
         fillColor: Colors.white.withValues(alpha: 0.1),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: BorderSide.none,
+        ),
       ),
     );
   }
 
   Widget _buildCircle(Color color, double size) {
     return Container(
-      width: size, height: size,
+      width: size,
+      height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: RadialGradient(colors: [color.withValues(alpha: 0.3), color.withValues(alpha: 0)]),
+        gradient: RadialGradient(
+          colors: [color.withValues(alpha: 0.3), color.withValues(alpha: 0)],
+        ),
       ),
     );
   }

@@ -40,17 +40,27 @@ class _CalendarPageState extends State<CalendarPage> {
     _pageController = PageController(initialPage: widget.initialIndex);
   }
 
-  List<TaskModel> _getEventsForDay(DateTime day, List<TaskModel> allTasks, bool isSharedView, String? calendarId) {
+  List<TaskModel> _getEventsForDay(
+    DateTime day,
+    List<TaskModel> allTasks,
+    bool isSharedView,
+    String? calendarId,
+  ) {
     final targetDayUtc = DateTime.utc(day.year, day.month, day.day);
 
     final filtered = allTasks.where((task) {
       final parsedDate = DateTime.tryParse(task.dataInizio) ?? DateTime.now();
-      final taskDayUtc = DateTime.utc(parsedDate.year, parsedDate.month, parsedDate.day);
+      final taskDayUtc = DateTime.utc(
+        parsedDate.year,
+        parsedDate.month,
+        parsedDate.day,
+      );
 
       final isSameDay = taskDayUtc == targetDayUtc;
       final isTaskShared = task.sharedCalendarId != null;
       final matchesType = isSharedView ? isTaskShared : !isTaskShared;
-      final matchesCalendar = !isSharedView || task.sharedCalendarId == calendarId;
+      final matchesCalendar =
+          !isSharedView || task.sharedCalendarId == calendarId;
 
       return isSameDay && matchesType && matchesCalendar;
     }).toList();
@@ -68,7 +78,12 @@ class _CalendarPageState extends State<CalendarPage> {
 
   void _onBottomNavTapped(int index) {
     if (index == 0) {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomePage(initialIndex: _calendarIndex)));
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => HomePage(initialIndex: _calendarIndex),
+        ),
+      );
     } else if (index == 2) {
       context.read<AuthCubit>().logout();
     }
@@ -94,34 +109,65 @@ class _CalendarPageState extends State<CalendarPage> {
             padding: const EdgeInsets.all(30),
             decoration: BoxDecoration(
               color: Colors.black.withValues(alpha: 0.7),
-              border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.2), width: 1.5)),
+              border: Border(
+                top: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  width: 1.5,
+                ),
+              ),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(AppStrings.impostazioni, style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                const Text(
+                  AppStrings.impostazioni,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 20),
-                const Text(AppStrings.briefingLabel, style: TextStyle(color: Colors.white70, fontSize: 16)),
+                const Text(
+                  AppStrings.briefingLabel,
+                  style: TextStyle(color: Colors.white70, fontSize: 16),
+                ),
                 const SizedBox(height: 10),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 15),
-                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(15)),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(15),
+                  ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
                       value: _preferredNotificationTime,
                       dropdownColor: const Color(0xFF1E1E1E),
                       style: const TextStyle(color: Colors.white, fontSize: 18),
-                      icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
+                      icon: const Icon(
+                        Icons.arrow_drop_down,
+                        color: Colors.white,
+                      ),
                       isExpanded: true,
                       items: briefingTimes.map((String time) {
-                        return DropdownMenuItem<String>(value: time, child: Text(time));
+                        return DropdownMenuItem<String>(
+                          value: time,
+                          child: Text(time),
+                        );
                       }).toList(),
                       onChanged: (val) {
                         if (val != null) {
                           setState(() => _preferredNotificationTime = val);
                           Navigator.pop(ctx);
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("${AppStrings.snackOrarioAggiornato}$val"), backgroundColor: Colors.green));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                "${AppStrings.snackOrarioAggiornato}$val",
+                              ),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
                         }
                       },
                     ),
@@ -135,10 +181,18 @@ class _CalendarPageState extends State<CalendarPage> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white.withValues(alpha: 0.15),
                       elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15), side: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        side: BorderSide(
+                          color: Colors.white.withValues(alpha: 0.3),
+                        ),
+                      ),
                     ),
                     icon: const Icon(Icons.people_alt, color: Colors.white),
-                    label: const Text(AppStrings.btnGestisciCondivisione, style: TextStyle(color: Colors.white)),
+                    label: const Text(
+                      AppStrings.btnGestisciCondivisione,
+                      style: TextStyle(color: Colors.white),
+                    ),
                     onPressed: () {
                       Navigator.pop(ctx);
                       showCalendarManagementModal(context);
@@ -159,23 +213,39 @@ class _CalendarPageState extends State<CalendarPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1E1E1E),
-        title: const Text(AppStrings.alertEliminaCalTitolo, style: TextStyle(color: Colors.white)),
-        content: Text(AppStrings.alertEliminaCalCorpo.replaceFirst('{name}', calendarName), style: const TextStyle(color: Colors.white70)),
+        title: const Text(
+          AppStrings.alertEliminaCalTitolo,
+          style: TextStyle(color: Colors.white),
+        ),
+        content: Text(
+          AppStrings.alertEliminaCalCorpo.replaceFirst('{name}', calendarName),
+          style: const TextStyle(color: Colors.white70),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text(AppStrings.btnAnnulla, style: TextStyle(color: Colors.white54)),
+            child: const Text(
+              AppStrings.btnAnnulla,
+              style: TextStyle(color: Colors.white54),
+            ),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
               int totalShared = _cachedCalendars.length;
               if (totalShared > 1 && _calendarIndex == totalShared) {
-                _pageController.animateToPage(_calendarIndex - 1, duration: const Duration(milliseconds: 300), curve: Curves.ease);
+                _pageController.animateToPage(
+                  _calendarIndex - 1,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.ease,
+                );
               }
               context.read<CalendarCubit>().deleteCalendar(calendarId);
             },
-            child: const Text(AppStrings.btnElimina, style: TextStyle(color: Colors.redAccent)),
+            child: const Text(
+              AppStrings.btnElimina,
+              style: TextStyle(color: Colors.redAccent),
+            ),
           ),
         ],
       ),
@@ -187,16 +257,37 @@ class _CalendarPageState extends State<CalendarPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppAtmospheres.sharedBg,
-        title: const Text(AppStrings.dialogVisualizzaOtp, style: TextStyle(color: Colors.white)),
+        title: const Text(
+          AppStrings.dialogVisualizzaOtp,
+          style: TextStyle(color: Colors.white),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Nome: $calendarName", style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+            Text(
+              "Nome: $calendarName",
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             const SizedBox(height: 10),
-            const Text("Usa questo codice per far unire un altro utente:", style: TextStyle(color: Colors.white70)),
+            const Text(
+              "Usa questo codice per far unire un altro utente:",
+              style: TextStyle(color: Colors.white70),
+            ),
             const SizedBox(height: 15),
-            SelectableText(code, style: const TextStyle(color: Colors.cyanAccent, fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 2)),
+            SelectableText(
+              code,
+              style: const TextStyle(
+                color: Colors.cyanAccent,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 2,
+              ),
+            ),
           ],
         ),
         actions: [
@@ -206,21 +297,36 @@ class _CalendarPageState extends State<CalendarPage> {
               final nav = Navigator.of(ctx);
 
               await Clipboard.setData(ClipboardData(text: code));
-              messenger.showSnackBar(const SnackBar(content: Text('Codice copiato negli appunti!')));
+              messenger.showSnackBar(
+                const SnackBar(content: Text('Codice copiato negli appunti!')),
+              );
               nav.pop();
             },
-            child: const Text(AppStrings.btnCopia, style: TextStyle(color: Colors.white)),
+            child: const Text(
+              AppStrings.btnCopia,
+              style: TextStyle(color: Colors.white),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text(AppStrings.btnChiudi, style: TextStyle(color: Colors.white)),
+            child: const Text(
+              AppStrings.btnChiudi,
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
     );
   }
 
-  void _showDayAgendaModal(BuildContext context, DateTime day, List<TaskModel> tasks, Color bgColor, bool isSharedView, String? calendarId) {
+  void _showDayAgendaModal(
+    BuildContext context,
+    DateTime day,
+    List<TaskModel> tasks,
+    Color bgColor,
+    bool isSharedView,
+    String? calendarId,
+  ) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -255,7 +361,9 @@ class _CalendarPageState extends State<CalendarPage> {
           _cachedCalendars = state.sharedCalendars;
         }
 
-        int pageCount = _cachedCalendars.isEmpty ? 2 : _cachedCalendars.length + 1;
+        int pageCount = _cachedCalendars.isEmpty
+            ? 2
+            : _cachedCalendars.length + 1;
         bool isShared = _calendarIndex > 0;
 
         Color currentBgColor = AppAtmospheres.privateBg;
@@ -292,11 +400,17 @@ class _CalendarPageState extends State<CalendarPage> {
                     Expanded(
                       child: PageView.builder(
                         controller: _pageController,
-                        onPageChanged: (index) => setState(() => _calendarIndex = index),
+                        onPageChanged: (index) =>
+                            setState(() => _calendarIndex = index),
                         itemCount: pageCount,
                         itemBuilder: (context, index) {
                           if (index == 0) {
-                            return _buildCalendarView(AppStrings.dashboardPrivata, false, null, null);
+                            return _buildCalendarView(
+                              AppStrings.dashboardPrivata,
+                              false,
+                              null,
+                              null,
+                            );
                           } else {
                             if (_cachedCalendars.isEmpty) {
                               return _buildEmptySharedView();
@@ -306,7 +420,12 @@ class _CalendarPageState extends State<CalendarPage> {
                                 calendarIndex = _cachedCalendars.length - 1;
                               }
                               final calendar = _cachedCalendars[calendarIndex];
-                              return _buildCalendarView(calendar.nome, true, calendar.id, calendar.inviteCode);
+                              return _buildCalendarView(
+                                calendar.nome,
+                                true,
+                                calendar.id,
+                                calendar.inviteCode,
+                              );
                             }
                           }
                         },
@@ -332,19 +451,31 @@ class _CalendarPageState extends State<CalendarPage> {
           children: [
             const Icon(Icons.people_outline, color: Colors.white24, size: 64),
             const SizedBox(height: 16),
-            const Text(AppStrings.emptySharedMessage, style: TextStyle(color: Colors.white70, fontSize: 16)),
+            const Text(
+              AppStrings.emptySharedMessage,
+              style: TextStyle(color: Colors.white70, fontSize: 16),
+            ),
             const SizedBox(height: 20),
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white.withValues(alpha: 0.15),
                 elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15), side: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                  side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                ),
               ),
               icon: const Icon(Icons.add_link, color: Colors.white),
-              label: const Text(AppStrings.btnCreaUnisciti, style: TextStyle(color: Colors.white)),
+              label: const Text(
+                AppStrings.btnCreaUnisciti,
+                style: TextStyle(color: Colors.white),
+              ),
               onPressed: () => showCalendarManagementModal(context),
-            )
+            ),
           ],
         ),
       ),
@@ -367,18 +498,34 @@ class _CalendarPageState extends State<CalendarPage> {
         children: [
           Row(
             children: [
-              const Text(AppStrings.visualeMese, style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-              if (isShared && currentCalendar != null && currentCalendar.inviteCode != null) ...[
+              const Text(
+                AppStrings.visualeMese,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              if (isShared &&
+                  currentCalendar != null &&
+                  currentCalendar.inviteCode != null) ...[
                 const SizedBox(width: 8),
                 GestureDetector(
-                  onTap: () => _showOtpInfoDialog(currentCalendar!.nome, currentCalendar.inviteCode!),
+                  onTap: () => _showOtpInfoDialog(
+                    currentCalendar!.nome,
+                    currentCalendar.inviteCode!,
+                  ),
                   child: Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.2),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.priority_high, color: Colors.white, size: 16),
+                    child: const Icon(
+                      Icons.priority_high,
+                      color: Colors.white,
+                      size: 16,
+                    ),
                   ),
                 ),
               ],
@@ -388,16 +535,29 @@ class _CalendarPageState extends State<CalendarPage> {
             children: [
               if (isShared && currentCalendar != null) ...[
                 Container(
-                  decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
                   child: IconButton(
-                    icon: const Icon(Icons.delete_outline, color: Colors.black, size: 20),
-                    onPressed: () => _confirmDeleteCalendar(currentCalendar!.id, currentCalendar.nome),
+                    icon: const Icon(
+                      Icons.delete_outline,
+                      color: Colors.black,
+                      size: 20,
+                    ),
+                    onPressed: () => _confirmDeleteCalendar(
+                      currentCalendar!.id,
+                      currentCalendar.nome,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 10),
               ],
               Container(
-                decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
                 child: IconButton(
                   icon: const Icon(Icons.add, color: Colors.black, size: 20),
                   onPressed: () {
@@ -417,9 +577,16 @@ class _CalendarPageState extends State<CalendarPage> {
               ),
               const SizedBox(width: 10),
               Container(
-                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
                 child: IconButton(
-                  icon: const Icon(Icons.settings, color: Colors.white, size: 20),
+                  icon: const Icon(
+                    Icons.settings,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                   onPressed: _showSettingsModal,
                 ),
               ),
@@ -430,7 +597,12 @@ class _CalendarPageState extends State<CalendarPage> {
     );
   }
 
-  Widget _buildCalendarView(String title, bool isSharedView, String? calendarId, String? inviteCode) {
+  Widget _buildCalendarView(
+    String title,
+    bool isSharedView,
+    String? calendarId,
+    String? inviteCode,
+  ) {
     return BlocBuilder<TaskCubit, TaskState>(
       builder: (context, state) {
         List<TaskModel> allTasks = [];
@@ -441,10 +613,24 @@ class _CalendarPageState extends State<CalendarPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const SizedBox(height: 20),
               Container(
-                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(24), border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1.5)),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    width: 1.5,
+                  ),
+                ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(24),
                   child: BackdropFilter(
@@ -458,7 +644,8 @@ class _CalendarPageState extends State<CalendarPage> {
                         lastDay: DateTime.utc(2030, 12, 31),
                         focusedDay: _focusedDay,
                         rowHeight: 65,
-                        selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+                        selectedDayPredicate: (day) =>
+                            isSameDay(_selectedDay, day),
                         onPageChanged: (focusedDay) {
                           setState(() {
                             _focusedDay = focusedDay;
@@ -471,21 +658,79 @@ class _CalendarPageState extends State<CalendarPage> {
                             _focusedDay = focusedDay;
                           });
 
-                          final tasksForDay = _getEventsForDay(selectedDay, allTasks, isSharedView, calendarId);
+                          final tasksForDay = _getEventsForDay(
+                            selectedDay,
+                            allTasks,
+                            isSharedView,
+                            calendarId,
+                          );
 
                           Color modalBgColor = AppAtmospheres.privateBg;
                           if (isSharedView && _cachedCalendars.isNotEmpty) {
                             int sharedIdx = _calendarIndex - 1;
-                            if (sharedIdx >= _cachedCalendars.length) sharedIdx = _cachedCalendars.length - 1;
-                            modalBgColor = AppAtmospheres.getSharedBg(sharedIdx);
+                            if (sharedIdx >= _cachedCalendars.length) {
+                              sharedIdx = _cachedCalendars.length - 1;
+                              modalBgColor = AppAtmospheres.getSharedBg(
+                                sharedIdx,
+                              );
+                            }
                           }
 
-                          _showDayAgendaModal(context, selectedDay, tasksForDay, modalBgColor, isSharedView, calendarId);
+                          _showDayAgendaModal(
+                            context,
+                            selectedDay,
+                            tasksForDay,
+                            modalBgColor,
+                            isSharedView,
+                            calendarId,
+                          );
                         },
-                        eventLoader: (day) => _getEventsForDay(day, allTasks, isSharedView, calendarId),
-                        calendarStyle: const CalendarStyle(defaultTextStyle: TextStyle(color: Colors.white), weekendTextStyle: TextStyle(color: Colors.white70), outsideTextStyle: TextStyle(color: Colors.white38), todayDecoration: BoxDecoration(color: Colors.white38, shape: BoxShape.rectangle, borderRadius: BorderRadius.all(Radius.circular(12))), selectedDecoration: BoxDecoration(color: Colors.white, shape: BoxShape.rectangle, borderRadius: BorderRadius.all(Radius.circular(12))), selectedTextStyle: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-                        headerStyle: const HeaderStyle(formatButtonVisible: false, titleCentered: true, titleTextStyle: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold), leftChevronIcon: Icon(Icons.chevron_left, color: Colors.white), rightChevronIcon: Icon(Icons.chevron_right, color: Colors.white)),
-                        daysOfWeekStyle: const DaysOfWeekStyle(weekdayStyle: TextStyle(color: Colors.white), weekendStyle: TextStyle(color: Colors.white70)),
+                        eventLoader: (day) => _getEventsForDay(
+                          day,
+                          allTasks,
+                          isSharedView,
+                          calendarId,
+                        ),
+                        calendarStyle: const CalendarStyle(
+                          defaultTextStyle: TextStyle(color: Colors.white),
+                          weekendTextStyle: TextStyle(color: Colors.white70),
+                          outsideTextStyle: TextStyle(color: Colors.white38),
+                          todayDecoration: BoxDecoration(
+                            color: Colors.white38,
+                            shape: BoxShape.rectangle,
+                            borderRadius: BorderRadius.all(Radius.circular(12)),
+                          ),
+                          selectedDecoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.rectangle,
+                            borderRadius: BorderRadius.all(Radius.circular(12)),
+                          ),
+                          selectedTextStyle: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        headerStyle: const HeaderStyle(
+                          formatButtonVisible: false,
+                          titleCentered: true,
+                          titleTextStyle: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          leftChevronIcon: Icon(
+                            Icons.chevron_left,
+                            color: Colors.white,
+                          ),
+                          rightChevronIcon: Icon(
+                            Icons.chevron_right,
+                            color: Colors.white,
+                          ),
+                        ),
+                        daysOfWeekStyle: const DaysOfWeekStyle(
+                          weekdayStyle: TextStyle(color: Colors.white),
+                          weekendStyle: TextStyle(color: Colors.white70),
+                        ),
                         calendarBuilders: CalendarBuilders(
                           markerBuilder: (context, date, events) {
                             if (events.isEmpty) return const SizedBox();
@@ -497,15 +742,24 @@ class _CalendarPageState extends State<CalendarPage> {
                                 width: 16,
                                 height: 16,
                                 decoration: BoxDecoration(
-                                  color: isSharedView ? Colors.cyanAccent.withValues(alpha: 0.9) : Colors.redAccent.withValues(alpha: 0.9),
+                                  color: isSharedView
+                                      ? Colors.cyanAccent.withValues(alpha: 0.9)
+                                      : Colors.redAccent.withValues(alpha: 0.9),
                                   shape: BoxShape.circle,
-                                  boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 2)],
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: Colors.black26,
+                                      blurRadius: 2,
+                                    ),
+                                  ],
                                 ),
                                 alignment: Alignment.center,
                                 child: Text(
                                   '${events.length}',
                                   style: TextStyle(
-                                    color: isSharedView ? Colors.black : Colors.white,
+                                    color: isSharedView
+                                        ? Colors.black
+                                        : Colors.white,
                                     fontSize: 9,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -532,19 +786,37 @@ class _CalendarPageState extends State<CalendarPage> {
       padding: const EdgeInsets.only(top: 10, bottom: 20),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: List.generate(pageCount, (index) => GestureDetector(
-          onTap: () {
-            _pageController.animateToPage(
-              index,
-              duration: const Duration(milliseconds: 400),
-              curve: Curves.easeInOut,
-            );
-          },
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 5), width: 12, height: 12,
-            decoration: BoxDecoration(shape: BoxShape.circle, color: _calendarIndex == index ? Colors.white : Colors.white.withValues(alpha: 0.3), boxShadow: _calendarIndex == index ? [BoxShadow(color: Colors.white.withValues(alpha: 0.8), blurRadius: 10)] : []),
+        children: List.generate(
+          pageCount,
+          (index) => GestureDetector(
+            onTap: () {
+              _pageController.animateToPage(
+                index,
+                duration: const Duration(milliseconds: 400),
+                curve: Curves.easeInOut,
+              );
+            },
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 5),
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _calendarIndex == index
+                    ? Colors.white
+                    : Colors.white.withValues(alpha: 0.3),
+                boxShadow: _calendarIndex == index
+                    ? [
+                        BoxShadow(
+                          color: Colors.white.withValues(alpha: 0.8),
+                          blurRadius: 10,
+                        ),
+                      ]
+                    : [],
+              ),
+            ),
           ),
-        )),
+        ),
       ),
     );
   }
@@ -555,8 +827,10 @@ class _CalendarPageState extends State<CalendarPage> {
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
           decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.4),
-              border: const Border(top: BorderSide(color: Colors.white10, width: 0.5))
+            color: Colors.black.withValues(alpha: 0.4),
+            border: const Border(
+              top: BorderSide(color: Colors.white10, width: 0.5),
+            ),
           ),
           child: SafeArea(
             child: Padding(
@@ -565,7 +839,11 @@ class _CalendarPageState extends State<CalendarPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   _buildNavItem(Icons.dashboard_rounded, AppStrings.navHome, 0),
-                  _buildNavItem(Icons.calendar_month_rounded, AppStrings.navCalendario, 1),
+                  _buildNavItem(
+                    Icons.calendar_month_rounded,
+                    AppStrings.navCalendario,
+                    1,
+                  ),
                   _buildNavItem(Icons.logout_rounded, AppStrings.navLogout, 2),
                 ],
               ),
@@ -584,7 +862,9 @@ class _CalendarPageState extends State<CalendarPage> {
         duration: const Duration(milliseconds: 300),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
+          color: isSelected
+              ? Colors.white.withValues(alpha: 0.2)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
@@ -592,8 +872,14 @@ class _CalendarPageState extends State<CalendarPage> {
             Icon(icon, color: isSelected ? Colors.white : Colors.white54),
             if (isSelected) ...[
               const SizedBox(width: 8),
-              Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            ]
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -648,15 +934,28 @@ class _DayAgendaModalContentState extends State<_DayAgendaModalContent> {
       builder: (context, state) {
         List<TaskModel> tasks = widget.initialTasks;
         if (state is TaskLoaded) {
-          final targetDayUtc = DateTime.utc(widget.day.year, widget.day.month, widget.day.day);
+          final targetDayUtc = DateTime.utc(
+            widget.day.year,
+            widget.day.month,
+            widget.day.day,
+          );
           tasks = state.tasks.where((task) {
-            final parsedDate = DateTime.tryParse(task.dataInizio) ?? DateTime.now();
-            final taskDayUtc = DateTime.utc(parsedDate.year, parsedDate.month, parsedDate.day);
+            final parsedDate =
+                DateTime.tryParse(task.dataInizio) ?? DateTime.now();
+            final taskDayUtc = DateTime.utc(
+              parsedDate.year,
+              parsedDate.month,
+              parsedDate.day,
+            );
 
             final isSameDay = taskDayUtc == targetDayUtc;
             final isTaskShared = task.sharedCalendarId != null;
-            final matchesType = widget.isSharedView ? isTaskShared : !isTaskShared;
-            final matchesCalendar = !widget.isSharedView || task.sharedCalendarId == widget.calendarId;
+            final matchesType = widget.isSharedView
+                ? isTaskShared
+                : !isTaskShared;
+            final matchesCalendar =
+                !widget.isSharedView ||
+                task.sharedCalendarId == widget.calendarId;
 
             return isSameDay && matchesType && matchesCalendar;
           }).toList();
@@ -675,7 +974,12 @@ class _DayAgendaModalContentState extends State<_DayAgendaModalContent> {
           padding: const EdgeInsets.fromLTRB(20, 15, 20, 0),
           decoration: BoxDecoration(
             color: widget.bgColor.withValues(alpha: 0.9),
-            border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.2), width: 1.5)),
+            border: Border(
+              top: BorderSide(
+                color: Colors.white.withValues(alpha: 0.2),
+                width: 1.5,
+              ),
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -686,20 +990,39 @@ class _DayAgendaModalContentState extends State<_DayAgendaModalContent> {
                   if (_isSelectionMode)
                     TextButton.icon(
                       onPressed: () {
-                        context.read<TaskCubit>().bulkDeleteTasks(List<String>.from(_selectedTaskIds));
+                        context.read<TaskCubit>().bulkDeleteTasks(
+                          List<String>.from(_selectedTaskIds),
+                        );
                         _exitSelectionMode();
                       },
-                      icon: const Icon(Icons.delete_sweep, color: Colors.redAccent),
-                      label: Text("Elimina (${_selectedTaskIds.length})", style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                      icon: const Icon(
+                        Icons.delete_sweep,
+                        color: Colors.redAccent,
+                      ),
+                      label: Text(
+                        "Elimina (${_selectedTaskIds.length})",
+                        style: const TextStyle(
+                          color: Colors.redAccent,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     )
                   else
                     Container(width: 40),
                   Container(
-                    width: 50, height: 5,
-                    decoration: BoxDecoration(color: Colors.white38, borderRadius: BorderRadius.circular(10)),
+                    width: 50,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: Colors.white38,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.add_circle_outline, color: Colors.white, size: 28),
+                    icon: const Icon(
+                      Icons.add_circle_outline,
+                      color: Colors.white,
+                      size: 28,
+                    ),
                     onPressed: () {
                       Navigator.pop(context);
                       showTaskFormModal(
@@ -710,48 +1033,61 @@ class _DayAgendaModalContentState extends State<_DayAgendaModalContent> {
                         forcedDate: widget.day,
                       );
                     },
-                  )
+                  ),
                 ],
               ),
               const SizedBox(height: 15),
               Text(
                 "${AppStrings.agendaDel} ${widget.day.day.toString().padLeft(2, '0')}/${widget.day.month.toString().padLeft(2, '0')}/${widget.day.year}",
-                style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 20),
               Expanded(
                 child: tasks.isEmpty
-                    ? const Center(child: Text(AppStrings.nessunTaskData, style: TextStyle(color: Colors.white70, fontSize: 16)))
+                    ? const Center(
+                        child: Text(
+                          AppStrings.nessunTaskData,
+                          style: TextStyle(color: Colors.white70, fontSize: 16),
+                        ),
+                      )
                     : ListView.builder(
-                  padding: const EdgeInsets.only(bottom: 40),
-                  itemCount: tasks.length,
-                  itemBuilder: (context, index) {
-                    final task = tasks[index];
-                    final isSelected = _selectedTaskIds.contains(task.id);
-                    return GlassTaskCard(
-                      title: task.titolo,
-                      description: task.descrizione,
-                      colorHex: task.colore,
-                      isShared: task.sharedCalendarId != null,
-                      isSelectedMode: _isSelectionMode,
-                      isSelected: isSelected,
-                      onLongPress: () {
-                        setState(() {
-                          _isSelectionMode = true;
-                          _toggleSelection(task.id);
-                        });
-                      },
-                      onTap: () {
-                        if (_isSelectionMode) {
-                          _toggleSelection(task.id);
-                        } else {
-                          Navigator.pop(context);
-                          showTaskDetailsModal(context, context.read<TaskCubit>(), task);
-                        }
-                      },
-                    );
-                  },
-                ),
+                        padding: const EdgeInsets.only(bottom: 40),
+                        itemCount: tasks.length,
+                        itemBuilder: (context, index) {
+                          final task = tasks[index];
+                          final isSelected = _selectedTaskIds.contains(task.id);
+                          return GlassTaskCard(
+                            title: task.titolo,
+                            description: task.descrizione,
+                            colorHex: task.colore,
+                            isShared: task.sharedCalendarId != null,
+                            isSelectedMode: _isSelectionMode,
+                            isSelected: isSelected,
+                            onLongPress: () {
+                              setState(() {
+                                _isSelectionMode = true;
+                                _toggleSelection(task.id);
+                              });
+                            },
+                            onTap: () {
+                              if (_isSelectionMode) {
+                                _toggleSelection(task.id);
+                              } else {
+                                Navigator.pop(context);
+                                showTaskDetailsModal(
+                                  context,
+                                  context.read<TaskCubit>(),
+                                  task,
+                                );
+                              }
+                            },
+                          );
+                        },
+                      ),
               ),
             ],
           ),

@@ -26,12 +26,17 @@ class AuthService {
     }
   }
 
-  Future<UserModel> signup(String nome, String email, String password, String dataNascita) async {
+  Future<UserModel> signup(
+    String nome,
+    String email,
+    String password,
+    String dataNascita,
+  ) async {
     final response = await _apiClient.post('/auth/signup', {
       'nome': nome,
       'email': email,
       'password': password,
-      'dataNascita': dataNascita
+      'dataNascita': dataNascita,
     });
 
     // Spring Boot restituisce 201 Created in caso di successo

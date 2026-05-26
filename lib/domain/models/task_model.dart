@@ -32,8 +32,10 @@ class TaskModel {
       id: json['id']?.toString() ?? '',
       titolo: json['titolo']?.toString() ?? 'Senza Titolo',
       descrizione: json['descrizione']?.toString() ?? '',
-      dataInizio: json['dataInizio']?.toString() ?? DateTime.now().toIso8601String(),
-      dataFine: json['dataFine']?.toString() ?? DateTime.now().toIso8601String(),
+      dataInizio:
+          json['dataInizio']?.toString() ?? DateTime.now().toIso8601String(),
+      dataFine:
+          json['dataFine']?.toString() ?? DateTime.now().toIso8601String(),
       tuttoIlGiorno: json['tuttoIlGiorno'] == true,
       colore: json['colore']?.toString() ?? '#06B6D4',
       userId: json['userId']?.toString() ?? '',

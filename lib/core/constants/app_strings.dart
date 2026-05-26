@@ -24,16 +24,20 @@ class AppStrings {
   static const String visualeMese = 'Visuale Mese';
   static const String nessunTaskData = 'Nessun task per questa data';
   static const String nessunTaskOggi = 'Nessun task per oggi.';
-  static const String emptySharedMessage = 'Non hai ancora calendari condivisi.';
+  static const String emptySharedMessage =
+      'Non hai ancora calendari condivisi.';
   static const String btnCreaUnisciti = 'Crea o Unisciti';
   static const String agendaDel = 'Agenda del';
 
   // Impostazioni & Modali
   static const String impostazioni = 'Impostazioni';
-  static const String briefingLabel = 'Scegli l\'orario del briefing mattutino:';
-  static const String btnGestisciCondivisione = 'Gestisci Condivisione Calendari';
+  static const String briefingLabel =
+      'Scegli l\'orario del briefing mattutino:';
+  static const String btnGestisciCondivisione =
+      'Gestisci Condivisione Calendari';
   static const String alertEliminaCalTitolo = 'Elimina Calendario';
-  static const String alertEliminaCalCorpo = 'Sei sicuro di voler eliminare il calendario \'{name}\'? Questa azione è irreversibile.';
+  static const String alertEliminaCalCorpo =
+      'Sei sicuro di voler eliminare il calendario \'{name}\'? Questa azione è irreversibile.';
   static const String btnAnnulla = 'Annulla';
   static const String btnElimina = 'Elimina';
   static const String snackOrarioAggiornato = 'Orario aggiornato alle ';
@@ -46,7 +50,8 @@ class AppStrings {
   static const String labelCodiceInvito = 'Inserisci Codice di Invito';
   static const String btnConferma = 'CONFERMA';
   static const String dialogCodiceGenerato = 'Codice Generato';
-  static const String dialogCodiceCorpo = 'Condivisi questo codice con l\'altro utente:';
+  static const String dialogCodiceCorpo =
+      'Condivisi questo codice con l\'altro utente:';
   static const String btnCopia = 'COPIA';
   static const String btnChiudi = 'CHIUDI';
   static const String snackCopiato = 'Copiato negli appunti!';

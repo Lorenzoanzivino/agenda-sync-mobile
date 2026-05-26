@@ -46,9 +46,11 @@ class GlassTaskCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-                color: isSelected ? taskColor.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.25),
-                blurRadius: isSelected ? 25 : 20,
-                offset: const Offset(0, 10)
+              color: isSelected
+                  ? taskColor.withValues(alpha: 0.3)
+                  : Colors.black.withValues(alpha: 0.25),
+              blurRadius: isSelected ? 25 : 20,
+              offset: const Offset(0, 10),
             ),
           ],
         ),
@@ -64,10 +66,12 @@ class GlassTaskCard extends StatelessWidget {
                     : taskColor.withValues(alpha: 0.14),
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                    color: isSelected
-                        ? Colors.white
-                        : (isShared ? taskColor.withValues(alpha: 0.6) : taskColor.withValues(alpha: 0.2)),
-                    width: isSelected ? 2.5 : (isShared ? 2.0 : 1.5)
+                  color: isSelected
+                      ? Colors.white
+                      : (isShared
+                            ? taskColor.withValues(alpha: 0.6)
+                            : taskColor.withValues(alpha: 0.2)),
+                  width: isSelected ? 2.5 : (isShared ? 2.0 : 1.5),
                 ),
               ),
               child: Row(
@@ -76,7 +80,8 @@ class GlassTaskCard extends StatelessWidget {
                     AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
                       margin: const EdgeInsets.only(right: 15),
-                      width: 24, height: 24,
+                      width: 24,
+                      height: 24,
                       decoration: BoxDecoration(
                         color: isSelected ? Colors.white : Colors.transparent,
                         shape: BoxShape.circle,
@@ -94,9 +99,22 @@ class GlassTaskCard extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Expanded(child: Text(title, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold))),
+                            Expanded(
+                              child: Text(
+                                title,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
                             if (!isSelectedMode)
-                              Icon(isShared ? Icons.people_alt : Icons.circle, color: taskColor, size: 18),
+                              Icon(
+                                isShared ? Icons.people_alt : Icons.circle,
+                                color: taskColor,
+                                size: 18,
+                              ),
                           ],
                         ),
                         const SizedBox(height: 5),
