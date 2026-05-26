@@ -1,12 +1,15 @@
+// lib/data/services/notification_service.dart
+import 'dart:async';
 import 'dart:io' show Platform;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 
 class NotificationService {
-  // Getter lazy: non viene chiamato finché non serve, evitando crash all'avvio
+  // Punto 11: Stream per notificare alla UI l'arrivo di un messaggio in tempo reale
+  static final StreamController<void> onNotificationReceived = StreamController.broadcast();
+
   FirebaseMessaging get _firebaseMessaging => FirebaseMessaging.instance;
 
-  // Verifica se la piattaforma supporta Firebase Messaging
   bool get _isFirebaseSupported {
     if (kIsWeb) return true;
     return Platform.isAndroid || Platform.isIOS || Platform.isMacOS;
@@ -33,6 +36,10 @@ class NotificationService {
 
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
         debugPrint('📥 Ricevuta notifica in Foreground: ${message.notification?.title}');
+
+        // Punto 8 e 11: Le notifiche push immediate di FCM triggerano il refresh Real-Time
+        // (I briefing schedulati andranno invece gestiti tramite notifiche locali FlutterLocalNotificationsPlugin)
+        onNotificationReceived.add(null);
       });
     } catch (e) {
       debugPrint('❌ Errore inizializzazione Firebase Messaging: $e');
