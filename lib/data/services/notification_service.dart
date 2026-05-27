@@ -1,19 +1,27 @@
 import 'dart:async';
 import 'dart:io' show Platform;
-import 'package:flutter/material.dart'; // Aggiunto per risolvere "Color isn't a class"
+import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/foundation.dart';
 
+// Funzione isolata (top-level) OBBLIGATORIA per elaborare le notifiche quando l'app è in background o chiusa
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Richiesto da Firebase per far funzionare l'isolate in background
+  await Firebase.initializeApp();
+  debugPrint('🌙 Ricevuta notifica in Background: ${message.notification?.title}');
+}
+
 class NotificationService {
   static final StreamController<void> onNotificationReceived =
-      StreamController.broadcast();
+  StreamController.broadcast();
 
-  // FIX: Tornato a essere un 'get' (evita il crash istantaneo su Linux e appena si apre l'app)
   FirebaseMessaging get _firebaseMessaging => FirebaseMessaging.instance;
 
   final FlutterLocalNotificationsPlugin _localNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
+  FlutterLocalNotificationsPlugin();
 
   bool get _isFirebaseSupported {
     if (kIsWeb) return true;
@@ -29,6 +37,9 @@ class NotificationService {
     }
 
     try {
+      // Registrazione dell'handler per le notifiche in background
+      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
       // Richiesta permessi nativi
       NotificationSettings settings = await _firebaseMessaging
           .requestPermission(alert: true, badge: true, sound: true);
@@ -39,9 +50,9 @@ class NotificationService {
         debugPrint('⚠️ Permessi notifiche negati.');
       }
 
-      // Configurazione canale di notifica per Android (Obbligatorio per Android 8.0+)
+      // Configurazione canale di notifica per Android
       const AndroidInitializationSettings androidInitSettings =
-          AndroidInitializationSettings('@mipmap/ic_launcher');
+      AndroidInitializationSettings('@mipmap/ic_launcher');
       const InitializationSettings initSettings = InitializationSettings(
         android: androidInitSettings,
       );
@@ -51,15 +62,15 @@ class NotificationService {
         'high_importance_channel',
         'Notifiche Importanti',
         description:
-            'Canale utilizzato per notifiche push immediate (es. nuovi task).',
+        'Canale utilizzato per notifiche push immediate (es. nuovi task).',
         importance: Importance.max,
       );
 
       if (Platform.isAndroid) {
         await _localNotificationsPlugin
             .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin
-            >()
+            AndroidFlutterLocalNotificationsPlugin
+        >()
             ?.createNotificationChannel(channel);
       }
 
