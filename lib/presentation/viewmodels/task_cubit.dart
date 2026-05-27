@@ -94,16 +94,16 @@ class TaskCubit extends Cubit<TaskState> {
   }
 
   Future<void> updateTask(
-    String id, {
-    required String titolo,
-    required String descrizione,
-    required DateTime dataInizio,
-    required DateTime dataFine,
-    required String priorita,
-    required bool tuttoIlGiorno,
-    required String colore,
-    String? sharedCalendarId,
-  }) async {
+      String id, {
+        required String titolo,
+        required String descrizione,
+        required DateTime dataInizio,
+        required DateTime dataFine,
+        required String priorita,
+        required bool tuttoIlGiorno,
+        required String colore,
+        String? sharedCalendarId,
+      }) async {
     try {
       final updatedTask = await _taskService.updateTask(
         id,

@@ -20,13 +20,13 @@ class AuthCubit extends Cubit<AuthState> {
       final userDataString = prefs.getString('userData');
 
       if (token != null && userDataString != null) {
-        final userData = jsonDecode(userDataString);
+        final Map<String, dynamic> userData = jsonDecode(userDataString);
+        userData['token'] = token;
         final user = UserModel.fromJson(userData);
 
         _setupNotifications();
         emit(AuthAuthenticated(user));
       } else if (token != null) {
-        // Fallback di sicurezza se esiste token ma non i dati
         _setupNotifications();
         emit(AuthAuthenticated(UserModel(id: '', email: '', nome: 'Utente')));
       } else {
@@ -76,7 +76,7 @@ class AuthCubit extends Cubit<AuthState> {
       try {
         await _authService.updateFcmToken(fcmToken);
       } catch (e) {
-        // Log silenzioso se fallisce l'update del token
+        // Fallback silenzioso
       }
     }
   }
