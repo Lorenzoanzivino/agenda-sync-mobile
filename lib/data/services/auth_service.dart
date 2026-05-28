@@ -59,6 +59,10 @@ class AuthService {
     await _apiClient.put('/users/fcm-token', {'fcmToken': fcmToken});
   }
 
+  Future<void> updateNotificationTime(String time) async {
+    await _apiClient.put('/users/preferences', {'orarioNotificaMattutina': time});
+  }
+
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('userToken');

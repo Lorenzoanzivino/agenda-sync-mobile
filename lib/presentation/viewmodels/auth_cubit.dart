@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../data/services/auth_service.dart';
@@ -76,7 +77,30 @@ class AuthCubit extends Cubit<AuthState> {
       try {
         await _authService.updateFcmToken(fcmToken);
       } catch (e) {
-        // Fallback silenzioso
+        debugPrint("Errore salvataggio fcm token: $e");
+      }
+    }
+  }
+
+  Future<void> updateNotificationTime(String time) async {
+    if (state is AuthAuthenticated) {
+      try {
+        await _authService.updateNotificationTime(time);
+
+        final currentUser = (state as AuthAuthenticated).user;
+        final updatedUser = currentUser.copyWith(orarioNotificaMattutina: time);
+
+        final prefs = await SharedPreferences.getInstance();
+        final userDataString = prefs.getString('userData');
+        if (userDataString != null) {
+          final Map<String, dynamic> userData = jsonDecode(userDataString);
+          userData['orarioNotificaMattutina'] = time;
+          await prefs.setString('userData', jsonEncode(userData));
+        }
+
+        emit(AuthAuthenticated(updatedUser));
+      } catch (e) {
+        debugPrint("Errore aggiornamento orario notifica: $e");
       }
     }
   }

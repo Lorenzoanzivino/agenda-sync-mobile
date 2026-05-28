@@ -162,6 +162,10 @@ class _CalendarPageState extends State<CalendarPage> {
                       onChanged: (val) {
                         if (val != null) {
                           setState(() => _preferredNotificationTime = val);
+
+                          // Chiamata API per aggiornare l'orario nel database
+                          context.read<AuthCubit>().updateNotificationTime(val);
+
                           Navigator.pop(ctx);
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
@@ -384,6 +388,12 @@ class _CalendarPageState extends State<CalendarPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Inizializza l'orario di notifica recuperando il dato reale salvato sul profilo
+    final authState = context.read<AuthCubit>().state;
+    if (authState is AuthAuthenticated) {
+      _preferredNotificationTime = authState.user.orarioNotificaMattutina ?? "08:00";
+    }
+
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
         if (state is AuthUnauthenticated) {
