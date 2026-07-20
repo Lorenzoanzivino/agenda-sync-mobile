@@ -33,7 +33,7 @@ class _CalendarPageState extends State<CalendarPage> {
   late int _calendarIndex;
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay = DateTime.now();
-  String _preferredNotificationTime = "08:00";
+  String _preferredNotificationTime = "Nessuna";
 
   final _storage = const FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
@@ -62,15 +62,10 @@ class _CalendarPageState extends State<CalendarPage> {
 
   Future<void> _loadNotificationTimeForCurrentContext() async {
     String? savedTime = await _storage.read(key: _currentContextKey);
-    if (savedTime != null) {
-      setState(() {
-        _preferredNotificationTime = savedTime;
-      });
-    } else {
-      setState(() {
-        _preferredNotificationTime = "08:00";
-      });
-    }
+    if (!mounted) return;
+    setState(() {
+      _preferredNotificationTime = savedTime ?? "Nessuna";
+    });
   }
 
   List<TaskModel> _getEventsForDay(
@@ -123,7 +118,7 @@ class _CalendarPageState extends State<CalendarPage> {
   }
 
   void _showSettingsModal() {
-    final List<String> briefingTimes = [];
+    final List<String> briefingTimes = ["Nessuna"];
     for (int h = 1; h <= 24; h++) {
       briefingTimes.add('${h.toString().padLeft(2, '0')}:00');
       if (h < 24) {
@@ -163,7 +158,7 @@ class _CalendarPageState extends State<CalendarPage> {
                 ),
                 const SizedBox(height: 20),
                 const Text(
-                  AppStrings.briefingLabel,
+                  "Sveglia Promemoria Impegni:",
                   style: TextStyle(color: Colors.white70, fontSize: 16),
                 ),
                 const SizedBox(height: 10),
@@ -191,19 +186,13 @@ class _CalendarPageState extends State<CalendarPage> {
                       }).toList(),
                       onChanged: (val) async {
                         if (val != null) {
-                          setState(() => _preferredNotificationTime = val);
                           await _storage.write(key: _currentContextKey, value: val);
-
-                          if (_calendarIndex == 0) {
-                            context.read<AuthCubit>().updateNotificationTime(val);
-                          }
-
+                          if (!ctx.mounted) return;
+                          setState(() => _preferredNotificationTime = val);
                           Navigator.pop(ctx);
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text(
-                                "${AppStrings.snackOrarioAggiornato}$val",
-                              ),
+                              content: Text("Sveglia aggiornata a: $val"),
                               backgroundColor: Colors.green,
                             ),
                           );
