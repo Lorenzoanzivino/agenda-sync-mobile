@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../domain/models/task_model.dart';
@@ -34,6 +35,10 @@ class _CalendarPageState extends State<CalendarPage> {
   DateTime? _selectedDay = DateTime.now();
   String _preferredNotificationTime = "08:00";
 
+  final _storage = const FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
+
   List<SharedCalendarModel> _cachedCalendars = [];
 
   @override
@@ -41,6 +46,31 @@ class _CalendarPageState extends State<CalendarPage> {
     super.initState();
     _calendarIndex = widget.initialIndex;
     _pageController = PageController(initialPage: widget.initialIndex);
+    _loadNotificationTimeForCurrentContext();
+  }
+
+  String get _currentContextKey {
+    if (_calendarIndex == 0 || _cachedCalendars.isEmpty) {
+      return 'notification_time_private';
+    }
+    int sharedIdx = _calendarIndex - 1;
+    if (sharedIdx >= _cachedCalendars.length) {
+      sharedIdx = _cachedCalendars.length - 1;
+    }
+    return 'notification_time_shared_${_cachedCalendars[sharedIdx].id}';
+  }
+
+  Future<void> _loadNotificationTimeForCurrentContext() async {
+    String? savedTime = await _storage.read(key: _currentContextKey);
+    if (savedTime != null) {
+      setState(() {
+        _preferredNotificationTime = savedTime;
+      });
+    } else {
+      setState(() {
+        _preferredNotificationTime = "08:00";
+      });
+    }
   }
 
   List<TaskModel> _getEventsForDay(
@@ -159,12 +189,14 @@ class _CalendarPageState extends State<CalendarPage> {
                           child: Text(time),
                         );
                       }).toList(),
-                      onChanged: (val) {
+                      onChanged: (val) async {
                         if (val != null) {
                           setState(() => _preferredNotificationTime = val);
+                          await _storage.write(key: _currentContextKey, value: val);
 
-                          // Chiamata API per aggiornare l'orario nel database
-                          context.read<AuthCubit>().updateNotificationTime(val);
+                          if (_calendarIndex == 0) {
+                            context.read<AuthCubit>().updateNotificationTime(val);
+                          }
 
                           Navigator.pop(ctx);
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -388,12 +420,6 @@ class _CalendarPageState extends State<CalendarPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Inizializza l'orario di notifica recuperando il dato reale salvato sul profilo
-    final authState = context.read<AuthCubit>().state;
-    if (authState is AuthAuthenticated) {
-      _preferredNotificationTime = authState.user.orarioNotificaMattutina ?? "08:00";
-    }
-
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
         if (state is AuthUnauthenticated) {
@@ -448,8 +474,10 @@ class _CalendarPageState extends State<CalendarPage> {
                       Expanded(
                         child: PageView.builder(
                           controller: _pageController,
-                          onPageChanged: (index) =>
-                              setState(() => _calendarIndex = index),
+                          onPageChanged: (index) {
+                            setState(() => _calendarIndex = index);
+                            _loadNotificationTimeForCurrentContext();
+                          },
                           itemCount: pageCount,
                           itemBuilder: (context, index) {
                             if (index == 0) {
@@ -486,7 +514,7 @@ class _CalendarPageState extends State<CalendarPage> {
               ],
             ),
             bottomNavigationBar: CalendarBottomNav(
-              currentIndex: 1, // 1 è l'indice per il Calendario
+              currentIndex: 1,
               onTap: _onBottomNavTapped,
             ),
           );
