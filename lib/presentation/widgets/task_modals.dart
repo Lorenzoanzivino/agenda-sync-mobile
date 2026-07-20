@@ -11,13 +11,13 @@ import '../viewmodels/calendar_cubit.dart';
 import 'atmosphere_background.dart';
 
 void showTaskFormModal(
-  BuildContext context,
-  TaskCubit taskCubit, {
-  TaskModel? task,
-  bool isShared = false,
-  String? forcedCalendarId,
-  DateTime? forcedDate,
-}) {
+    BuildContext context,
+    TaskCubit taskCubit, {
+      TaskModel? task,
+      bool isShared = false,
+      String? forcedCalendarId,
+      DateTime? forcedDate,
+    }) {
   final calendarCubit = context.read<CalendarCubit>();
   Navigator.of(context).push(
     MaterialPageRoute(
@@ -39,10 +39,10 @@ void showTaskFormModal(
 }
 
 void showTaskDetailsModal(
-  BuildContext context,
-  TaskCubit taskCubit,
-  TaskModel task,
-) {
+    BuildContext context,
+    TaskCubit taskCubit,
+    TaskModel task,
+    ) {
   showModalBottomSheet(
     context: context,
     backgroundColor: Colors.transparent,
@@ -217,7 +217,7 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
   final _descCtrl = TextEditingController();
   final List<String> _hours = List.generate(
     24,
-    (index) => index.toString().padLeft(2, '0'),
+        (index) => index.toString().padLeft(2, '0'),
   );
   final List<String> _minutes = ['00', '15', '30', '45'];
 
@@ -247,11 +247,17 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
 
   late Color bgColor;
 
+  // Restituisce la chiave di storage isolata per contesto (Privato vs Condiviso specifico)
+  String get _storageKey {
+    if (widget.isSharedContext && _selectedSharedCalendarId != null) {
+      return 'task_templates_shared_${_selectedSharedCalendarId}';
+    }
+    return 'task_templates_private';
+  }
+
   @override
   void initState() {
     super.initState();
-    _loadTemplates();
-
     bgColor = widget.isSharedContext
         ? AppAtmospheres.sharedBg
         : AppAtmospheres.privateBg;
@@ -273,7 +279,7 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
           DateTime.tryParse(t.dataInizio)?.toLocal() ?? DateTime.now();
       final end =
           DateTime.tryParse(t.dataFine)?.toLocal() ??
-          DateTime.now().add(const Duration(hours: 1));
+              DateTime.now().add(const Duration(hours: 1));
 
       _selectedDate = start;
       _startHour = start.hour.toString().padLeft(2, '0');
@@ -281,32 +287,51 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
       _endHour = end.hour.toString().padLeft(2, '0');
       _endMinute = _snapMinute(end.minute);
     }
+
+    _loadTemplates();
   }
 
   Future<void> _loadTemplates() async {
-    String? templatesJson = await _storage.read(key: 'task_templates');
+    String? templatesJson = await _storage.read(key: _storageKey);
     if (templatesJson != null) {
+      try {
+        setState(() {
+          _savedTemplates = jsonDecode(templatesJson);
+        });
+      } catch (_) {}
+    } else {
       setState(() {
-        _savedTemplates = jsonDecode(templatesJson);
+        _savedTemplates = [];
       });
     }
   }
 
   Future<void> _saveCurrentAsTemplate() async {
-    if (_titoloCtrl.text.trim().isEmpty) {
+    final titoloInserito = _titoloCtrl.text.trim();
+    if (titoloInserito.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'I campi obbligatori contrassegnati da * non possono essere vuoti.',
-          ),
+          content: Text('Il titolo non può essere vuoto.'),
           backgroundColor: Colors.redAccent,
         ),
       );
       return;
     }
 
+    // Controllo se esiste già un template con lo stesso nome nel contesto
+    bool giaEsiste = _savedTemplates.any((t) => (t['titolo'] ?? '').toString().toLowerCase() == titoloInserito.toLowerCase());
+    if (giaEsiste) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Esiste già un modello salvato con questo nome!'),
+          backgroundColor: Colors.orangeAccent,
+        ),
+      );
+      return;
+    }
+
     final newTemplate = {
-      'titolo': _titoloCtrl.text.trim(),
+      'titolo': titoloInserito,
       'descrizione': _descCtrl.text.trim(),
       'colore': _selectedColor,
       'tuttoIlGiorno': _isAllDay,
@@ -321,7 +346,7 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
     });
 
     await _storage.write(
-      key: 'task_templates',
+      key: _storageKey,
       value: jsonEncode(_savedTemplates),
     );
     if (mounted) {
@@ -345,6 +370,24 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
       _endHour = t['endHour'] ?? '10';
       _endMinute = t['endMinute'] ?? '00';
     });
+  }
+
+  void _deleteTemplate(int index) async {
+    setState(() {
+      _savedTemplates.removeAt(index);
+    });
+    await _storage.write(
+      key: _storageKey,
+      value: jsonEncode(_savedTemplates),
+    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Modello eliminato.'),
+          backgroundColor: Colors.orangeAccent,
+        ),
+      );
+    }
   }
 
   void _showTemplatesModal() {
@@ -389,85 +432,79 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
             const SizedBox(height: 20),
             _savedTemplates.isEmpty
                 ? const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 30),
-                    child: Center(
-                      child: Text(
-                        "Nessun modello salvato.",
-                        style: TextStyle(color: Colors.white54),
-                      ),
-                    ),
-                  )
+              padding: EdgeInsets.symmetric(vertical: 30),
+              child: Center(
+                child: Text(
+                  "Nessun modello salvato per questo contesto.",
+                  style: TextStyle(color: Colors.white54),
+                ),
+              ),
+            )
                 : Flexible(
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: _savedTemplates.length,
-                      itemBuilder: (context, i) {
-                        final t = _savedTemplates[i] as Map<String, dynamic>;
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: _savedTemplates.length,
+                itemBuilder: (context, i) {
+                  final t = _savedTemplates[i] as Map<String, dynamic>;
 
-                        Color taskColor = Colors.cyanAccent;
-                        try {
-                          final cleaned = (t['colore'] ?? '#06B6D4').replaceAll(
-                            '#',
-                            '',
-                          );
-                          taskColor = Color(int.parse('FF$cleaned', radix: 16));
-                        } catch (_) {}
+                  Color taskColor = Colors.cyanAccent;
+                  try {
+                    final cleaned = (t['colore'] ?? '#06B6D4').replaceAll(
+                      '#',
+                      '',
+                    );
+                    taskColor = Color(int.parse('FF$cleaned', radix: 16));
+                  } catch (_) {}
 
-                        return Card(
-                          color: Colors.white.withValues(alpha: 0.1),
-                          elevation: 0,
-                          margin: const EdgeInsets.symmetric(vertical: 5),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                          child: ListTile(
-                            leading: Container(
-                              width: 15,
-                              height: 15,
-                              decoration: BoxDecoration(
-                                color: taskColor,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            title: Text(
-                              t['titolo'] ?? '',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            subtitle: Text(
-                              t['tuttoIlGiorno'] == true
-                                  ? "Tutto il giorno"
-                                  : "${t['startHour']}:${t['startMinute']} - ${t['endHour']}:${t['endMinute']}",
-                              style: const TextStyle(color: Colors.white70),
-                            ),
-                            trailing: IconButton(
-                              icon: const Icon(
-                                Icons.delete_outline,
-                                color: Colors.redAccent,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _savedTemplates.removeAt(i);
-                                });
-                                _storage.write(
-                                  key: 'task_templates',
-                                  value: jsonEncode(_savedTemplates),
-                                );
-                                Navigator.pop(ctx);
-                                _showTemplatesModal();
-                              },
-                            ),
-                            onTap: () {
-                              _applyTemplate(t);
-                              Navigator.pop(ctx);
-                            },
-                          ),
-                        );
+                  return Card(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    elevation: 0,
+                    margin: const EdgeInsets.symmetric(vertical: 5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: ListTile(
+                      leading: Container(
+                        width: 15,
+                        height: 15,
+                        decoration: BoxDecoration(
+                          color: taskColor,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      title: Text(
+                        t['titolo'] ?? '',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      subtitle: Text(
+                        t['tuttoIlGiorno'] == true
+                            ? "Tutto il giorno"
+                            : "${t['startHour']}:${t['startMinute']} - ${t['endHour']}:${t['endMinute']}",
+                        style: const TextStyle(color: Colors.white70),
+                      ),
+                      trailing: IconButton(
+                        icon: const Icon(
+                          Icons.delete_outline,
+                          color: Colors.redAccent,
+                        ),
+                        onPressed: () {
+                          _deleteTemplate(i);
+                          Navigator.pop(ctx);
+                          _showTemplatesModal();
+                        },
+                      ),
+                      onTap: () {
+                        _applyTemplate(t);
+                        Navigator.pop(ctx);
                       },
                     ),
-                  ),
+                  );
+                },
+              ),
+            ),
           ],
         ),
       ),
@@ -638,10 +675,10 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
   }
 
   Widget _buildTimeDropdown(
-    String value,
-    List<String> items,
-    ValueChanged<String?> onChanged,
-  ) {
+      String value,
+      List<String> items,
+      ValueChanged<String?> onChanged,
+      ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
@@ -657,8 +694,8 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
           items: items
               .map(
                 (String item) =>
-                    DropdownMenuItem<String>(value: item, child: Text(item)),
-              )
+                DropdownMenuItem<String>(value: item, child: Text(item)),
+          )
               .toList(),
           onChanged: onChanged,
         ),
@@ -671,8 +708,8 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
     final safeBottom = MediaQuery.of(context).padding.bottom;
     String screenTitle = widget.task == null
         ? (widget.isSharedContext
-              ? AppStrings.taskCondivisoTitle
-              : AppStrings.taskPrivatoTitle)
+        ? AppStrings.taskCondivisoTitle
+        : AppStrings.taskPrivatoTitle)
         : AppStrings.taskModificaTitle;
 
     return Scaffold(
@@ -697,7 +734,7 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.library_books),
-            tooltip: 'Carica modello',
+            tooltip: 'Gestisci modelli',
             onPressed: _showTemplatesModal,
           ),
         ],
@@ -803,25 +840,78 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
                             ),
                             boxShadow: isSelected
                                 ? [
-                                    BoxShadow(
-                                      color: colorObj.withValues(alpha: 0.6),
-                                      blurRadius: 10,
-                                      spreadRadius: 2,
-                                    ),
-                                  ]
+                              BoxShadow(
+                                color: colorObj.withValues(alpha: 0.6),
+                                blurRadius: 10,
+                                spreadRadius: 2,
+                              ),
+                            ]
                                 : [],
                           ),
                           child: isSelected
                               ? const Icon(
-                                  Icons.check,
-                                  color: Colors.white,
-                                  size: 20,
-                                )
+                            Icons.check,
+                            color: Colors.white,
+                            size: 20,
+                          )
                               : null,
                         ),
                       );
                     }).toList(),
                   ),
+
+                  // BARRA ORIZZONTALE RAPIDA DEI TEMPLATE (PILLOLE)
+                  if (_savedTemplates.isNotEmpty) ...[
+                    const SizedBox(height: 20),
+                    const Text(
+                      "Modelli Rapidi:",
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      height: 42,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _savedTemplates.length,
+                        itemBuilder: (context, i) {
+                          final t = _savedTemplates[i] as Map<String, dynamic>;
+                          final templateTitle = t['titolo'] ?? 'Modello';
+                          return Container(
+                            margin: const EdgeInsets.only(right: 8),
+                            child: Material(
+                              color: Colors.black.withValues(alpha: 0.3),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                side: const BorderSide(color: Colors.white70, width: 1),
+                              ),
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(12),
+                                onTap: () => _applyTemplate(t),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                  child: Center(
+                                    child: Text(
+                                      templateTitle,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+
                   const SizedBox(height: 20),
 
                   Theme(
@@ -853,7 +943,7 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
                             _buildTimeDropdown(
                               _startHour,
                               _hours,
-                              (v) => _onStartTimeChanged(v!, _startMinute),
+                                  (v) => _onStartTimeChanged(v!, _startMinute),
                             ),
                             const Text(
                               " : ",
@@ -865,7 +955,7 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
                             _buildTimeDropdown(
                               _startMinute,
                               _minutes,
-                              (v) => _onStartTimeChanged(_startHour, v!),
+                                  (v) => _onStartTimeChanged(_startHour, v!),
                             ),
                           ],
                         ),
@@ -884,7 +974,7 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
                             _buildTimeDropdown(
                               _endHour,
                               _hours,
-                              (v) => _onEndTimeChanged(v!, _endMinute),
+                                  (v) => _onEndTimeChanged(v!, _endMinute),
                             ),
                             const Text(
                               " : ",
@@ -896,7 +986,7 @@ class _TaskFormScreenState extends State<_TaskFormScreen> {
                             _buildTimeDropdown(
                               _endMinute,
                               _minutes,
-                              (v) => _onEndTimeChanged(_endHour, v!),
+                                  (v) => _onEndTimeChanged(_endHour, v!),
                             ),
                           ],
                         ),

@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../domain/models/shared_calendar_model.dart';
@@ -29,6 +30,10 @@ class _HomePageState extends State<HomePage> {
   String _preferredNotificationTime = "08:00";
   bool _hasFetched = false;
 
+  final _storage = const FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
+
   List<SharedCalendarModel> _cachedCalendars = [];
 
   @override
@@ -36,6 +41,31 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     _dashboardIndex = widget.initialIndex;
     _pageController = PageController(initialPage: widget.initialIndex);
+    _loadNotificationTimeForCurrentContext();
+  }
+
+  String get _currentContextKey {
+    if (_dashboardIndex == 0 || _cachedCalendars.isEmpty) {
+      return 'notification_time_private';
+    }
+    int sharedIdx = _dashboardIndex - 1;
+    if (sharedIdx >= _cachedCalendars.length) {
+      sharedIdx = _cachedCalendars.length - 1;
+    }
+    return 'notification_time_shared_${_cachedCalendars[sharedIdx].id}';
+  }
+
+  Future<void> _loadNotificationTimeForCurrentContext() async {
+    String? savedTime = await _storage.read(key: _currentContextKey);
+    if (savedTime != null) {
+      setState(() {
+        _preferredNotificationTime = savedTime;
+      });
+    } else {
+      setState(() {
+        _preferredNotificationTime = "08:00";
+      });
+    }
   }
 
   @override
@@ -128,9 +158,16 @@ class _HomePageState extends State<HomePage> {
                           child: Text(time),
                         );
                       }).toList(),
-                      onChanged: (val) {
+                      onChanged: (val) async {
                         if (val != null) {
                           setState(() => _preferredNotificationTime = val);
+                          await _storage.write(key: _currentContextKey, value: val);
+
+                          // Se siamo nel privato, aggiorniamo anche sul profilo utente globale se desiderato
+                          if (_dashboardIndex == 0) {
+                            context.read<AuthCubit>().updateNotificationTime(val);
+                          }
+
                           Navigator.pop(ctx);
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
@@ -279,8 +316,10 @@ class _HomePageState extends State<HomePage> {
                       Expanded(
                         child: PageView.builder(
                           controller: _pageController,
-                          onPageChanged: (index) =>
-                              setState(() => _dashboardIndex = index),
+                          onPageChanged: (index) {
+                            setState(() => _dashboardIndex = index);
+                            _loadNotificationTimeForCurrentContext();
+                          },
                           itemCount: pageCount,
                           itemBuilder: (context, index) {
                             if (index == 0) {
